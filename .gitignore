@@ -1,0 +1,6 @@
+# /var/www/ 直下のうち api/ と web/ だけをリポジトリに含める
+/*
+!/api/
+!/web/
+!/README.md
+!.gitignore
