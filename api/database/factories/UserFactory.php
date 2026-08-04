@@ -42,4 +42,24 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    /**
+     * A developer account — the side that creates projects and tasks.
+     */
+    public function developer(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'developer',
+        ]);
+    }
+
+    /**
+     * A client account — the side that approves or rejects work.
+     */
+    public function client(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'client',
+        ]);
+    }
 }
