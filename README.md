@@ -108,6 +108,7 @@ The feature tests cover the parts of the portal that are expensive to get wrong:
 | --- | --- |
 | `AuthTest` | Sanctum token issuance, 401 on bad credentials, validation, password never serialised |
 | `RoleAccessTest` | The developer/client split — clients cannot reach company management routes |
+| `ProjectAccessTest` | A client of company A cannot read or approve company B's project by guessing an id, and a task id from another project does not resolve |
 | `TaskApprovalTest` | Only clients can approve or reject, rejection requires a reason, and **the approval log is append-only** — a later decision never overwrites an earlier one |
 | `EnsureRoleTest` | The role middleware in isolation, including the guest case |
 
@@ -125,6 +126,20 @@ client data are not.**
 - Real client data is kept out of version control.
 - Application code, migrations, and logic are fully published — the implementation *is* the
   portfolio.
+
+### Authorization model
+
+Two independent checks, both enforced server-side and both covered by tests:
+
+- **Role** (`role:developer`) — who may manage companies, clients and invitations.
+- **Tenancy** (`project.access`) — *which* projects a given client may touch at all. A client
+  belongs to a company; every route under `/projects/{project}` is guarded, and nested bindings
+  are scoped so a `{task}` or `{invoice}` id from another project resolves to a 404 rather than
+  being acted on.
+
+Role alone is not enough — it would let any authenticated client reach another company's project
+by guessing an id. The SPA hides those screens from clients, but hiding a link is not
+authorization; the API enforces it independently.
 
 ---
 

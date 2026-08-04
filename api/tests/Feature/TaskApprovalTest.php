@@ -27,10 +27,22 @@ class TaskApprovalTest extends TestCase
         Event::fake();
     }
 
-    public function test_a_client_can_approve_a_task(): void
+    /**
+     * A client of the company that owns the project — the only person allowed
+     * to sign work off. See ProjectAccessTest for the outsider case.
+     */
+    private function clientOf(Project $project): User
     {
         $client = User::factory()->client()->create();
+        $client->companies()->attach($project->company_id);
+
+        return $client;
+    }
+
+    public function test_a_client_can_approve_a_task(): void
+    {
         $project = Project::factory()->create();
+        $client = $this->clientOf($project);
         $task = Task::factory()->for($project)->create(['status' => 'pending_review']);
 
         $this->actingAs($client, 'sanctum')
@@ -52,8 +64,8 @@ class TaskApprovalTest extends TestCase
 
     public function test_a_client_can_reject_a_task_with_a_reason(): void
     {
-        $client = User::factory()->client()->create();
         $project = Project::factory()->create();
+        $client = $this->clientOf($project);
         $task = Task::factory()->for($project)->create(['status' => 'pending_review']);
 
         $this->actingAs($client, 'sanctum')
@@ -73,8 +85,8 @@ class TaskApprovalTest extends TestCase
 
     public function test_rejecting_requires_a_comment(): void
     {
-        $client = User::factory()->client()->create();
         $project = Project::factory()->create();
+        $client = $this->clientOf($project);
         $task = Task::factory()->for($project)->create(['status' => 'pending_review']);
 
         $this->actingAs($client, 'sanctum')
@@ -102,8 +114,8 @@ class TaskApprovalTest extends TestCase
 
     public function test_approval_history_is_append_only(): void
     {
-        $client = User::factory()->client()->create();
         $project = Project::factory()->create();
+        $client = $this->clientOf($project);
         $task = Task::factory()->for($project)->create(['status' => 'pending_review']);
 
         $this->actingAs($client, 'sanctum')
@@ -128,8 +140,8 @@ class TaskApprovalTest extends TestCase
 
     public function test_the_approval_log_is_readable_through_the_api(): void
     {
-        $client = User::factory()->client()->create();
         $project = Project::factory()->create();
+        $client = $this->clientOf($project);
         $task = Task::factory()->for($project)->create(['status' => 'pending_review']);
 
         $this->actingAs($client, 'sanctum')

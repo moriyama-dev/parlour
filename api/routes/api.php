@@ -37,41 +37,55 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/invitations', [InvitationController::class, 'globalIndex']);
     Route::delete('/invitations/{invitation}', [InvitationController::class, 'destroy']);
 
-    // Projects
+    // Projects (index is scoped per role inside the controller)
     Route::get('/projects', [ProjectController::class, 'index']);
     Route::post('/projects', [ProjectController::class, 'store']);
-    Route::get('/projects/{project}', [ProjectController::class, 'show']);
-    Route::put('/projects/{project}', [ProjectController::class, 'update']);
-    Route::patch('/projects/{project}/status', [ProjectController::class, 'updateStatus']);
 
-    // Tasks
-    Route::get('/projects/{project}/tasks', [TaskController::class, 'index']);
-    Route::post('/projects/{project}/tasks', [TaskController::class, 'store']);
-    Route::get('/projects/{project}/tasks/{task}', [TaskController::class, 'show']);
-    Route::put('/projects/{project}/tasks/{task}', [TaskController::class, 'update']);
-    Route::post('/projects/{project}/tasks/{task}/approve', [TaskController::class, 'approve']);
-    Route::post('/projects/{project}/tasks/{task}/reject', [TaskController::class, 'reject']);
-    Route::patch('/projects/{project}/tasks/{task}/deploy', [TaskController::class, 'markDeployed']);
+    /*
+     * Everything below hangs off a single project. Two guarantees are enforced
+     * here rather than repeated in ten controllers:
+     *
+     *   project.access  — the caller may see this project at all (a client only
+     *                     reaches projects belonging to their own company).
+     *   scopeBindings() — {task} and {invoice} must belong to {project}, so an
+     *                     id from someone else's project resolves to a 404.
+     */
+    Route::middleware('project.access')->scopeBindings()->group(function () {
+        Route::get('/projects/{project}', [ProjectController::class, 'show']);
+        Route::put('/projects/{project}', [ProjectController::class, 'update']);
+        Route::patch('/projects/{project}/status', [ProjectController::class, 'updateStatus']);
 
-    // Task Approvals
-    Route::get('/projects/{project}/tasks/{task}/approvals', [TaskApprovalController::class, 'index']);
+        // Tasks
+        Route::get('/projects/{project}/tasks', [TaskController::class, 'index']);
+        Route::post('/projects/{project}/tasks', [TaskController::class, 'store']);
+        Route::get('/projects/{project}/tasks/{task}', [TaskController::class, 'show']);
+        Route::put('/projects/{project}/tasks/{task}', [TaskController::class, 'update']);
+        Route::post('/projects/{project}/tasks/{task}/approve', [TaskController::class, 'approve']);
+        Route::post('/projects/{project}/tasks/{task}/reject', [TaskController::class, 'reject']);
+        Route::patch('/projects/{project}/tasks/{task}/deploy', [TaskController::class, 'markDeployed']);
 
-    // Messages
-    Route::get('/projects/{project}/messages', [MessageController::class, 'index']);
-    Route::post('/projects/{project}/messages', [MessageController::class, 'store']);
+        // Task Approvals
+        Route::get('/projects/{project}/tasks/{task}/approvals', [TaskApprovalController::class, 'index']);
 
-    // Invoices
-    Route::get('/projects/{project}/invoices', [InvoiceController::class, 'index']);
-    Route::post('/projects/{project}/invoices', [InvoiceController::class, 'store']);
-    Route::get('/projects/{project}/invoices/{invoice}', [InvoiceController::class, 'show']);
-    Route::put('/projects/{project}/invoices/{invoice}', [InvoiceController::class, 'update']);
-    Route::patch('/projects/{project}/invoices/{invoice}/send', [InvoiceController::class, 'send']);
-    Route::patch('/projects/{project}/invoices/{invoice}/paid', [InvoiceController::class, 'markPaid']);
+        // Messages
+        Route::get('/projects/{project}/messages', [MessageController::class, 'index']);
+        Route::post('/projects/{project}/messages', [MessageController::class, 'store']);
 
-    // Clients
-    Route::get('/clients', [ClientController::class, 'index']);
-    Route::put('/clients/{user}', [ClientController::class, 'update']);
-    Route::delete('/clients/{user}', [ClientController::class, 'destroy']);
+        // Invoices
+        Route::get('/projects/{project}/invoices', [InvoiceController::class, 'index']);
+        Route::post('/projects/{project}/invoices', [InvoiceController::class, 'store']);
+        Route::get('/projects/{project}/invoices/{invoice}', [InvoiceController::class, 'show']);
+        Route::put('/projects/{project}/invoices/{invoice}', [InvoiceController::class, 'update']);
+        Route::patch('/projects/{project}/invoices/{invoice}/send', [InvoiceController::class, 'send']);
+        Route::patch('/projects/{project}/invoices/{invoice}/paid', [InvoiceController::class, 'markPaid']);
+    });
+
+    // Clients (developer only — the client directory holds every client's contact details)
+    Route::middleware('role:developer')->group(function () {
+        Route::get('/clients', [ClientController::class, 'index']);
+        Route::put('/clients/{user}', [ClientController::class, 'update']);
+        Route::delete('/clients/{user}', [ClientController::class, 'destroy']);
+    });
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);
