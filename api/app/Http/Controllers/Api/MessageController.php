@@ -25,7 +25,7 @@ class MessageController extends Controller
     public function store(Request $request, Project $project)
     {
         $validated = $request->validate([
-            'body'      => ['required', 'string'],
+            'body' => ['required', 'string'],
             'parent_id' => ['nullable', 'exists:messages,id'],
         ]);
 
@@ -44,9 +44,9 @@ class MessageController extends Controller
         }
 
         $message = $project->messages()->create([
-            'user_id'   => $request->user()->id,
+            'user_id' => $request->user()->id,
             'parent_id' => $parentId,
-            'body'      => $validated['body'],
+            'body' => $validated['body'],
         ]);
 
         $message->load(['user', 'replies.user', 'replies.replies.user']);

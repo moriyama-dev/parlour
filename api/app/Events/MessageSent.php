@@ -4,7 +4,6 @@ namespace App\Events;
 
 use App\Http\Resources\MessageResource;
 use App\Models\Message;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -15,14 +14,12 @@ class MessageSent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public function __construct(public Message $message)
-    {
-    }
+    public function __construct(public Message $message) {}
 
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('project.' . $this->message->project_id),
+            new PrivateChannel('project.'.$this->message->project_id),
         ];
     }
 

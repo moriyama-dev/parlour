@@ -2,6 +2,11 @@
 
 > **A communication & approval portal for freelance web developers and their clients.**
 
+[![CI](https://github.com/moriyama-dev/parlour/actions/workflows/ci.yml/badge.svg)](https://github.com/moriyama-dev/parlour/actions/workflows/ci.yml)
+![PHP](https://img.shields.io/badge/PHP-8.3%20|%208.4-777BB4?style=flat&logo=php&logoColor=white)
+![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?style=flat&logo=laravel&logoColor=white)
+![Vue](https://img.shields.io/badge/Vue-3-4FC08D?style=flat&logo=vuedotjs&logoColor=white)
+
 🔗 **Live site:** **[parlour.takumi.ca](https://parlour.takumi.ca/)**
 
 > ℹ️ **This repository contains the actual source code powering the live application at
@@ -45,7 +50,7 @@ not just a place to work.
 
 | Layer        | Technology                          |
 | ------------ | ----------------------------------- |
-| Backend      | Laravel 11 (API)                    |
+| Backend      | Laravel 13 (API) on PHP 8.3+        |
 | Auth         | Laravel Sanctum (SPA tokens)        |
 | Frontend     | Vue 3 + Vite (Composition API)      |
 | State / Routing | Pinia + Vue Router               |
@@ -59,7 +64,7 @@ not just a place to work.
 
 ```
 .
-├── api/    # Laravel 11 backend (REST API, auth, real-time, notifications)
+├── api/    # Laravel 13 backend (REST API, auth, real-time, notifications)
 └── web/    # Vue 3 + Vite single-page application
 ```
 
@@ -85,6 +90,30 @@ npm run dev
 ```
 
 The SPA proxies `/api` requests to the Laravel backend during development.
+
+## Tests & CI
+
+```bash
+cd api
+php artisan test          # PHPUnit, SQLite in-memory — no local DB needed
+vendor/bin/pint --test    # code style
+```
+
+Every push and pull request runs the suite on **PHP 8.3 and 8.4**, checks style with Pint, and
+builds the Vue SPA — see [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+
+The feature tests cover the parts of the portal that are expensive to get wrong:
+
+| Area | What is pinned down |
+| --- | --- |
+| `AuthTest` | Sanctum token issuance, 401 on bad credentials, validation, password never serialised |
+| `RoleAccessTest` | The developer/client split — clients cannot reach company management routes |
+| `TaskApprovalTest` | Only clients can approve or reject, rejection requires a reason, and **the approval log is append-only** — a later decision never overwrites an earlier one |
+| `EnsureRoleTest` | The role middleware in isolation, including the guest case |
+
+The append-only guarantee is the one worth calling out: the approval history is what a client and
+a developer point at months later when they disagree about what was signed off, so it is tested
+rather than assumed.
 
 ## Security & Open-Source Notes
 

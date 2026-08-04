@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
@@ -21,11 +22,11 @@ class InvitationController extends Controller
             ->whereNull('accepted_at')
             ->latest()
             ->get()
-            ->map(fn($i) => [
-                'id'         => $i->id,
-                'email'      => $i->email,
-                'token'      => $i->token,
-                'company'    => $i->company->only(['id', 'name']),
+            ->map(fn ($i) => [
+                'id' => $i->id,
+                'email' => $i->email,
+                'token' => $i->token,
+                'company' => $i->company->only(['id', 'name']),
                 'expires_at' => $i->expires_at,
                 'is_expired' => $i->isExpired(),
                 'created_at' => $i->created_at,
@@ -41,6 +42,7 @@ class InvitationController extends Controller
             return response()->json(['message' => 'Forbidden'], 403);
         }
         $invitation->delete();
+
         return response()->noContent();
     }
 
@@ -56,13 +58,13 @@ class InvitationController extends Controller
         $invitation = Invitation::create([
             'company_id' => $company->id,
             'created_by' => $request->user()->id,
-            'email'      => $data['email'] ?? null,
-            'token'      => Str::random(64),
+            'email' => $data['email'] ?? null,
+            'token' => Str::random(64),
             'expires_at' => now()->addDays(7),
         ]);
 
         return response()->json([
-            'token'      => $invitation->token,
+            'token' => $invitation->token,
             'expires_at' => $invitation->expires_at,
         ], 201);
     }
@@ -80,8 +82,8 @@ class InvitationController extends Controller
         }
 
         return response()->json([
-            'company'    => $invitation->company->only(['id', 'name']),
-            'email'      => $invitation->email,
+            'company' => $invitation->company->only(['id', 'name']),
+            'email' => $invitation->email,
             'expires_at' => $invitation->expires_at,
         ]);
     }
@@ -99,16 +101,16 @@ class InvitationController extends Controller
         }
 
         $data = $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
         $user = User::create([
-            'name'     => $data['name'],
-            'email'    => $data['email'],
+            'name' => $data['name'],
+            'email' => $data['email'],
             'password' => bcrypt($data['password']),
-            'role'     => 'client',
+            'role' => 'client',
         ]);
 
         $invitation->company->users()->attach($user->id, ['is_primary' => false]);
@@ -118,7 +120,7 @@ class InvitationController extends Controller
 
         return response()->json([
             'token' => $authToken,
-            'user'  => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'role' => $user->role],
+            'user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'role' => $user->role],
         ], 201);
     }
 
@@ -129,11 +131,11 @@ class InvitationController extends Controller
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        $invitations = $company->invitations()->latest()->get()->map(fn($i) => [
-            'id'          => $i->id,
-            'email'       => $i->email,
-            'token'       => $i->token,
-            'expires_at'  => $i->expires_at,
+        $invitations = $company->invitations()->latest()->get()->map(fn ($i) => [
+            'id' => $i->id,
+            'email' => $i->email,
+            'token' => $i->token,
+            'expires_at' => $i->expires_at,
             'accepted_at' => $i->accepted_at,
         ]);
 

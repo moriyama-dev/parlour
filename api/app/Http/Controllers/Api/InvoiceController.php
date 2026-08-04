@@ -37,7 +37,7 @@ class InvoiceController extends Controller
         // Auto-generate invoice number INV-YYYY-NNN
         $year = now()->year;
         $count = Invoice::whereYear('created_at', $year)->count() + 1;
-        $invoiceNumber = 'INV-' . $year . '-' . str_pad($count, 3, '0', STR_PAD_LEFT);
+        $invoiceNumber = 'INV-'.$year.'-'.str_pad($count, 3, '0', STR_PAD_LEFT);
 
         $invoice = $project->invoices()->create([
             ...$validated,

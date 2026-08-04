@@ -4,7 +4,6 @@ namespace App\Events;
 
 use App\Http\Resources\TaskResource;
 use App\Models\Task;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -15,14 +14,12 @@ class TaskStatusUpdated implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public function __construct(public Task $task)
-    {
-    }
+    public function __construct(public Task $task) {}
 
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('tasks.' . $this->task->project_id),
+            new PrivateChannel('tasks.'.$this->task->project_id),
         ];
     }
 

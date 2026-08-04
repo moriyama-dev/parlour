@@ -10,13 +10,13 @@ class MessageResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'         => $this->id,
+            'id' => $this->id,
             'project_id' => $this->project_id,
-            'parent_id'  => $this->parent_id,
-            'body'       => $this->body,
+            'parent_id' => $this->parent_id,
+            'body' => $this->body,
             'created_at' => $this->created_at,
-            'user'       => new UserResource($this->whenLoaded('user')),
-            'replies'    => MessageResource::collection($this->whenLoaded('replies')),
+            'user' => new UserResource($this->whenLoaded('user')),
+            'replies' => MessageResource::collection($this->whenLoaded('replies')),
         ];
     }
 }
