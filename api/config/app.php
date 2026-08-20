@@ -123,4 +123,17 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Demo Mode
+    |--------------------------------------------------------------------------
+    |
+    | デモサイト(demo-customer-portal.takumi.ca)でのみ true。DemoSeeder は
+    | この値が true のときしか架空データを投入しない（本番DBへの誤投入を防止）。
+    | 本番(parlour.takumi.ca)の .env では DEMO_MODE を未設定/ false にすること。
+    |
+    */
+
+    'demo_mode' => (bool) env('DEMO_MODE', false),
+
 ];
