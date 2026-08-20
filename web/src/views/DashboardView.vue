@@ -1,25 +1,25 @@
 <template>
   <div class="max-w-6xl mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6">Dashboard</h1>
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">{{ t("dashboard.title") }}</h1>
 
     <div class="grid grid-cols-3 gap-4 mb-8">
       <div class="bg-white rounded-xl shadow p-5">
         <div class="text-3xl font-bold text-yellow-500">{{ pendingTasks.length }}</div>
-        <div class="text-sm text-gray-500 mt-1">Pending Approvals</div>
+        <div class="text-sm text-gray-500 mt-1">{{ t("dashboard.pendingApprovals") }}</div>
       </div>
       <div class="bg-white rounded-xl shadow p-5">
         <div class="text-3xl font-bold text-blue-500">{{ unreadMessages }}</div>
-        <div class="text-sm text-gray-500 mt-1">Unread Messages</div>
+        <div class="text-sm text-gray-500 mt-1">{{ t("dashboard.unreadMessages") }}</div>
       </div>
       <div class="bg-white rounded-xl shadow p-5">
         <div class="text-3xl font-bold text-red-500">{{ unpaidInvoices }}</div>
-        <div class="text-sm text-gray-500 mt-1">Unpaid Invoices</div>
+        <div class="text-sm text-gray-500 mt-1">{{ t("dashboard.unpaidInvoices") }}</div>
       </div>
     </div>
 
     <div class="bg-white rounded-xl shadow p-6 mb-6">
-      <h2 class="text-lg font-semibold text-gray-700 mb-4">Pending Approvals</h2>
-      <div v-if="pendingTasks.length === 0" class="text-gray-400 text-sm">No pending tasks.</div>
+      <h2 class="text-lg font-semibold text-gray-700 mb-4">{{ t("dashboard.pendingApprovals") }}</h2>
+      <div v-if="pendingTasks.length === 0" class="text-gray-400 text-sm">{{ t("dashboard.noPendingTasks") }}</div>
       <div v-for="task in pendingTasks" :key="task.id" class="flex items-center justify-between py-3 border-b last:border-0">
         <div>
           <div class="font-medium text-gray-800">{{ task.title }}</div>
@@ -33,8 +33,8 @@
     </div>
 
     <div class="bg-white rounded-xl shadow p-6">
-      <h2 class="text-lg font-semibold text-gray-700 mb-4">Recent Activity</h2>
-      <div v-if="notifications.length === 0" class="text-gray-400 text-sm">No recent activity.</div>
+      <h2 class="text-lg font-semibold text-gray-700 mb-4">{{ t("dashboard.recentActivity") }}</h2>
+      <div v-if="notifications.length === 0" class="text-gray-400 text-sm">{{ t("dashboard.noActivity") }}</div>
       <div v-for="n in notifications" :key="n.id" class="py-3 border-b last:border-0">
         <div class="text-sm text-gray-800">{{ n.body }}</div>
         <div class="text-xs text-gray-400 mt-1">{{ n.created_at }}</div>
@@ -45,9 +45,11 @@
 
 <script setup>
 import { ref, onMounted } from "vue"
+import { useI18n } from "vue-i18n"
 import api from "../api"
 import StatusBadge from "../components/StatusBadge.vue"
 
+const { t } = useI18n()
 const pendingTasks = ref([])
 const unreadMessages = ref(0)
 const unpaidInvoices = ref(0)

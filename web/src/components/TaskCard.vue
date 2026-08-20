@@ -3,7 +3,7 @@
     <div>
       <div class="font-medium text-gray-800">{{ task.title }}</div>
       <div v-if="task.projectName" class="text-sm text-gray-400">{{ task.projectName }}</div>
-      <div v-if="task.due_date" class="text-xs text-gray-400 mt-1">Due: {{ task.due_date }}</div>
+      <div v-if="task.due_date" class="text-xs text-gray-400 mt-1">{{ t("common.due") }}: {{ task.due_date }}</div>
     </div>
     <div class="flex items-center gap-2">
       <StatusBadge :status="task.type" />
@@ -13,6 +13,9 @@
 </template>
 
 <script setup>
+import { useI18n } from "vue-i18n"
 import StatusBadge from "./StatusBadge.vue"
+
+const { t } = useI18n()
 defineProps({ task: { type: Object, required: true } })
 </script>

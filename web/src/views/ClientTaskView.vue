@@ -8,12 +8,12 @@
         </div>
         <p class="text-gray-600 mb-4">{{ task.description }}</p>
         <a v-if="task.staging_url" :href="task.staging_url" target="_blank"
-          class="text-indigo-600 hover:underline text-sm">View on Staging</a>
+          class="text-indigo-600 hover:underline text-sm">{{ t("clientTask.viewOnStaging") }}</a>
       </div>
 
       <div class="bg-white rounded-xl shadow p-6">
-        <h2 class="font-semibold text-gray-700 mb-3">Approval History</h2>
-        <div v-if="!approvals.length" class="text-gray-400 text-sm">No history yet.</div>
+        <h2 class="font-semibold text-gray-700 mb-3">{{ t("clientTask.approvalHistory") }}</h2>
+        <div v-if="!approvals.length" class="text-gray-400 text-sm">{{ t("clientTask.noHistory") }}</div>
         <div v-for="a in approvals" :key="a.id" class="py-3 border-b last:border-0">
           <div class="flex justify-between">
             <span class="font-medium text-sm">{{ a.user?.name }}</span>
@@ -27,15 +27,15 @@
       <div class="bg-white rounded-xl shadow p-6 space-y-4">
         <div class="flex gap-4">
           <button @click="approve"
-            class="flex-1 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700">Approve</button>
+            class="flex-1 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700">{{ t("clientTask.approve") }}</button>
           <button @click="showReject = !showReject"
-            class="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700">Send Back</button>
+            class="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700">{{ t("clientTask.sendBack") }}</button>
         </div>
         <div v-if="showReject" class="space-y-2">
-          <textarea v-model="comment" placeholder="Please explain what needs to be changed (required)" rows="3"
+          <textarea v-model="comment" :placeholder="t('clientTask.rejectPlaceholder')" rows="3"
             class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"></textarea>
           <button @click="reject" :disabled="!comment.trim()"
-            class="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 disabled:opacity-50">Confirm Send Back</button>
+            class="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 disabled:opacity-50">{{ t("clientTask.confirmSendBack") }}</button>
         </div>
         <p v-if="message" :class="msgClass">{{ message }}</p>
       </div>
@@ -46,9 +46,11 @@
 <script setup>
 import { ref, computed, onMounted } from "vue"
 import { useRoute, useRouter } from "vue-router"
+import { useI18n } from "vue-i18n"
 import api from "../api"
 import StatusBadge from "../components/StatusBadge.vue"
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const taskId = route.params.id
@@ -87,10 +89,10 @@ async function approve() {
   try {
     await api.post(`/projects/${projectId}/tasks/${taskId}/approve`)
     success.value = true
-    message.value = "Task approved!"
+    message.value = t("clientTask.approved")
     setTimeout(() => router.push("/client/dashboard"), 1500)
   } catch (e) {
-    message.value = e.response?.data?.message || "Failed to approve"
+    message.value = e.response?.data?.message || t("clientTask.approveFailed")
   }
 }
 
@@ -99,10 +101,10 @@ async function reject() {
   try {
     await api.post(`/projects/${projectId}/tasks/${taskId}/reject`, { comment: comment.value })
     success.value = true
-    message.value = "Feedback sent!"
+    message.value = t("clientTask.feedbackSent")
     setTimeout(() => router.push("/client/dashboard"), 1500)
   } catch (e) {
-    message.value = e.response?.data?.message || "Failed to send back"
+    message.value = e.response?.data?.message || t("clientTask.sendBackFailed")
   }
 }
 </script>

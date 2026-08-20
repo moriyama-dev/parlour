@@ -3,23 +3,23 @@
     <div v-if="invoice" class="bg-white rounded-xl shadow p-8">
       <div class="flex justify-between items-start mb-8">
         <div>
-          <h1 class="text-2xl font-bold text-gray-800">Invoice #{{ invoice.invoice_number || invoice.id }}</h1>
-          <div class="text-sm text-gray-500 mt-1">Issued: {{ invoice.issued_at }}</div>
-          <div class="text-sm text-gray-500">Due: {{ invoice.due_at }}</div>
+          <h1 class="text-2xl font-bold text-gray-800">{{ t("invoice.number", { number: invoice.invoice_number || invoice.id }) }}</h1>
+          <div class="text-sm text-gray-500 mt-1">{{ t("invoice.issued") }}: {{ invoice.issued_at }}</div>
+          <div class="text-sm text-gray-500">{{ t("common.due") }}: {{ invoice.due_at }}</div>
         </div>
         <div class="flex gap-3 items-center">
           <StatusBadge :status="invoice.status" />
-          <button @click="print()" class="bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-200">Print</button>
+          <button @click="print()" class="bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-200">{{ t("invoice.print") }}</button>
         </div>
       </div>
 
       <table class="w-full text-sm mb-6">
         <thead>
           <tr class="border-b text-gray-500">
-            <th class="text-left py-2">Description</th>
-            <th class="text-right py-2">Qty</th>
-            <th class="text-right py-2">Unit Price</th>
-            <th class="text-right py-2">Amount</th>
+            <th class="text-left py-2">{{ t("invoice.description") }}</th>
+            <th class="text-right py-2">{{ t("invoice.qty") }}</th>
+            <th class="text-right py-2">{{ t("invoice.unitPrice") }}</th>
+            <th class="text-right py-2">{{ t("invoice.amount") }}</th>
           </tr>
         </thead>
         <tbody>
@@ -33,9 +33,9 @@
       </table>
 
       <div class="text-right space-y-1">
-        <div class="text-sm text-gray-600">Subtotal: ¥{{ Number(invoice.subtotal_amount || 0).toLocaleString() }}</div>
-        <div class="text-sm text-gray-600">Tax: ¥{{ Number(invoice.tax_amount || 0).toLocaleString() }}</div>
-        <div class="text-xl font-bold text-gray-800">Total: ¥{{ Number(invoice.total_amount || 0).toLocaleString() }}</div>
+        <div class="text-sm text-gray-600">{{ t("invoice.subtotal") }}: ¥{{ Number(invoice.subtotal_amount || 0).toLocaleString() }}</div>
+        <div class="text-sm text-gray-600">{{ t("invoice.tax") }}: ¥{{ Number(invoice.tax_amount || 0).toLocaleString() }}</div>
+        <div class="text-xl font-bold text-gray-800">{{ t("invoice.total") }}: ¥{{ Number(invoice.total_amount || 0).toLocaleString() }}</div>
       </div>
 
       <div v-if="invoice.notes" class="mt-6 text-sm text-gray-500 border-t pt-4">{{ invoice.notes }}</div>
@@ -46,9 +46,11 @@
 <script setup>
 import { ref, onMounted } from "vue"
 import { useRoute } from "vue-router"
+import { useI18n } from "vue-i18n"
 import api from "../api"
 import StatusBadge from "../components/StatusBadge.vue"
 
+const { t } = useI18n()
 const route = useRoute()
 const invoice = ref(null)
 const items = ref([])

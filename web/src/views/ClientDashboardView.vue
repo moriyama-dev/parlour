@@ -1,11 +1,11 @@
 <template>
   <div class="max-w-4xl mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6">Client Dashboard</h1>
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">{{ t("clientDashboard.title") }}</h1>
 
     <!-- My Projects -->
     <div class="bg-white rounded-xl shadow p-6 mb-6">
-      <h2 class="text-lg font-semibold text-gray-700 mb-4">My Projects</h2>
-      <div v-if="projects.length === 0" class="text-gray-400 text-sm">No projects assigned.</div>
+      <h2 class="text-lg font-semibold text-gray-700 mb-4">{{ t("clientDashboard.myProjects") }}</h2>
+      <div v-if="projects.length === 0" class="text-gray-400 text-sm">{{ t("clientDashboard.noProjects") }}</div>
       <div v-for="p in projects" :key="p.id"
         class="flex justify-between items-center py-3 border-b last:border-0">
         <div>
@@ -13,14 +13,14 @@
           <div class="text-sm text-gray-500">{{ p.company?.name }}</div>
         </div>
         <span class="text-xs px-2 py-1 rounded-full font-medium"
-          :class="statusClass(p.status)">{{ p.status }}</span>
+          :class="statusClass(p.status)">{{ badgeLabel(p.status) }}</span>
       </div>
     </div>
 
     <!-- Pending Review -->
     <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-6">
-      <h2 class="text-lg font-semibold text-yellow-800 mb-4">Pending Your Review</h2>
-      <div v-if="pendingTasks.length === 0" class="text-yellow-600 text-sm">No tasks pending review.</div>
+      <h2 class="text-lg font-semibold text-yellow-800 mb-4">{{ t("clientDashboard.pendingYourReview") }}</h2>
+      <div v-if="pendingTasks.length === 0" class="text-yellow-600 text-sm">{{ t("clientDashboard.noPendingReview") }}</div>
       <div v-for="task in pendingTasks" :key="task.id"
         class="bg-white rounded-lg shadow px-4 py-3 mb-2 flex justify-between items-center">
         <div>
@@ -28,14 +28,14 @@
           <div class="text-sm text-gray-500">{{ task.projectName }}</div>
         </div>
         <button @click="$router.push(`/client/tasks/${task.id}`)"
-          class="bg-yellow-500 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-yellow-600">Review Now</button>
+          class="bg-yellow-500 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-yellow-600">{{ t("clientDashboard.reviewNow") }}</button>
       </div>
     </div>
 
     <!-- All Tasks -->
     <div class="bg-white rounded-xl shadow p-6 mb-6">
-      <h2 class="text-lg font-semibold text-gray-700 mb-4">All Tasks</h2>
-      <div v-if="allTasks.length === 0" class="text-gray-400 text-sm">No tasks.</div>
+      <h2 class="text-lg font-semibold text-gray-700 mb-4">{{ t("clientDashboard.allTasks") }}</h2>
+      <div v-if="allTasks.length === 0" class="text-gray-400 text-sm">{{ t("clientDashboard.noTasks") }}</div>
       <div v-for="task in allTasks" :key="task.id"
         class="flex justify-between items-center py-3 border-b last:border-0">
         <div>
@@ -43,14 +43,14 @@
           <div class="text-sm text-gray-500">{{ task.projectName }}</div>
         </div>
         <span class="text-xs px-2 py-1 rounded-full font-medium"
-          :class="taskStatusClass(task.status)">{{ task.status }}</span>
+          :class="taskStatusClass(task.status)">{{ badgeLabel(task.status) }}</span>
       </div>
     </div>
 
     <!-- Recent Messages -->
     <div class="bg-white rounded-xl shadow p-6">
-      <h2 class="text-lg font-semibold text-gray-700 mb-4">Recent Messages</h2>
-      <div v-if="recentMessages.length === 0" class="text-gray-400 text-sm">No messages.</div>
+      <h2 class="text-lg font-semibold text-gray-700 mb-4">{{ t("clientDashboard.recentMessages") }}</h2>
+      <div v-if="recentMessages.length === 0" class="text-gray-400 text-sm">{{ t("clientDashboard.noMessages") }}</div>
       <div v-for="msg in recentMessages" :key="msg.id" class="py-3 border-b last:border-0">
         <div class="flex justify-between text-sm">
           <div>
@@ -67,12 +67,21 @@
 
 <script setup>
 import { ref, onMounted } from "vue"
+import { useI18n } from "vue-i18n"
 import api from "../api"
+import { activeDateLocale } from "../i18n"
 
+const { t, te } = useI18n()
 const projects = ref([])
 const pendingTasks = ref([])
 const allTasks = ref([])
 const recentMessages = ref([])
+
+// 生ステータス（active / pending_review 等）を badge 辞書で両言語化。未定義は生値。
+function badgeLabel(status) {
+  const key = `badge.${status}`
+  return te(key) ? t(key) : status
+}
 
 function statusClass(status) {
   const map = {
@@ -96,7 +105,7 @@ function taskStatusClass(status) {
 
 function formatDate(iso) {
   if (!iso) return ''
-  return new Date(iso).toLocaleString()
+  return new Date(iso).toLocaleString(activeDateLocale())
 }
 
 onMounted(async () => {

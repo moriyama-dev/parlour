@@ -1,10 +1,10 @@
 <template>
   <div class="max-w-3xl mx-auto px-4 py-8">
-    <h1 class="text-xl font-bold text-gray-800 mb-6">Messages</h1>
+    <h1 class="text-xl font-bold text-gray-800 mb-6">{{ t("messages.title") }}</h1>
 
     <div class="space-y-4 mb-6">
       <div v-if="messages.length === 0" class="text-gray-400 text-sm py-8 text-center">
-        No messages yet. Start the conversation below.
+        {{ t("messages.empty") }}
       </div>
 
       <div v-for="msg in messages" :key="msg.id" class="bg-white rounded-xl shadow px-4 py-3">
@@ -20,14 +20,14 @@
         </div>
         <div class="mt-2 text-gray-700 text-sm whitespace-pre-wrap pl-10">{{ msg.body }}</div>
         <div class="pl-10 mt-1">
-          <button @click="toggleReply(msg.id, msg.user?.name)" class="text-xs text-indigo-500 hover:text-indigo-700">Reply</button>
+          <button @click="toggleReply(msg.id, msg.user?.name)" class="text-xs text-indigo-500 hover:text-indigo-700">{{ t("messages.reply") }}</button>
         </div>
 
         <div v-if="replyingTo === msg.id" class="pl-10 mt-3 flex gap-2">
-          <input v-model="replyBody" :placeholder="`Reply to ${replyingToUser}...`" @keyup.enter="sendReply(msg.id)"
+          <input v-model="replyBody" :placeholder="t('messages.replyTo', { name: replyingToUser })" @keyup.enter="sendReply(msg.id)"
             class="flex-1 border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          <button @click="sendReply(msg.id)" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-700">Reply</button>
-          <button @click="cancelReply" class="px-3 py-1.5 border rounded-lg text-sm text-gray-500">Cancel</button>
+          <button @click="sendReply(msg.id)" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-700">{{ t("messages.reply") }}</button>
+          <button @click="cancelReply" class="px-3 py-1.5 border rounded-lg text-sm text-gray-500">{{ t("common.cancel") }}</button>
         </div>
 
         <!-- First-level replies -->
@@ -44,14 +44,14 @@
             </div>
             <div class="mt-1 text-gray-600 text-sm whitespace-pre-wrap pl-8">{{ r.body }}</div>
             <div class="pl-8 mt-1">
-              <button @click="toggleReply(r.id, r.user?.name)" class="text-xs text-indigo-400 hover:text-indigo-600">Reply</button>
+              <button @click="toggleReply(r.id, r.user?.name)" class="text-xs text-indigo-400 hover:text-indigo-600">{{ t("messages.reply") }}</button>
             </div>
 
             <div v-if="replyingTo === r.id" class="pl-8 mt-2 flex gap-2">
-              <input v-model="replyBody" :placeholder="`Reply to ${replyingToUser}...`" @keyup.enter="sendReply(r.id)"
+              <input v-model="replyBody" :placeholder="t('messages.replyTo', { name: replyingToUser })" @keyup.enter="sendReply(r.id)"
                 class="flex-1 border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              <button @click="sendReply(r.id)" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-700">Reply</button>
-              <button @click="cancelReply" class="px-3 py-1.5 border rounded-lg text-sm text-gray-500">Cancel</button>
+              <button @click="sendReply(r.id)" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-700">{{ t("messages.reply") }}</button>
+              <button @click="cancelReply" class="px-3 py-1.5 border rounded-lg text-sm text-gray-500">{{ t("common.cancel") }}</button>
             </div>
 
             <!-- Second-level replies -->
@@ -68,7 +68,7 @@
                 </div>
                 <div class="mt-1 text-gray-600 text-sm whitespace-pre-wrap pl-7">{{ rr.body }}</div>
                 <div class="pl-7 mt-1">
-                  <button @click="toggleReply(r.id, r.user?.name)" class="text-xs text-indigo-300 hover:text-indigo-500">Reply</button>
+                  <button @click="toggleReply(r.id, r.user?.name)" class="text-xs text-indigo-300 hover:text-indigo-500">{{ t("messages.reply") }}</button>
                 </div>
               </div>
             </div>
@@ -78,9 +78,9 @@
     </div>
 
     <form @submit.prevent="send" class="flex gap-2 sticky bottom-4">
-      <input v-model="body" placeholder="Type a message..."
+      <input v-model="body" :placeholder="t('messages.typePlaceholder')"
         class="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-      <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Send</button>
+      <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">{{ t("messages.send") }}</button>
     </form>
   </div>
 </template>
@@ -88,8 +88,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import api from '../api'
+import { activeDateLocale } from '../i18n'
 
+const { t } = useI18n()
 const route = useRoute()
 const id = route.params.id
 const messages = ref([])
@@ -100,7 +103,7 @@ const replyBody = ref('')
 
 function formatDate(d) {
   if (!d) return ''
-  return new Date(d).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return new Date(d).toLocaleString(activeDateLocale(), { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 function initials(name) {

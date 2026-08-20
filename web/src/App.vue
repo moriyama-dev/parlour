@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen takumi-gradient">
+    <DemoBanner />
     <AppNav v-if="auth.isAuthenticated" />
     <router-view />
   </div>
@@ -8,6 +9,7 @@
 <script setup>
 import { onMounted } from "vue"
 import AppNav from "./components/AppNav.vue"
+import DemoBanner from "./components/DemoBanner.vue"
 import { useAuthStore } from "./stores/auth"
 
 const auth = useAuthStore()

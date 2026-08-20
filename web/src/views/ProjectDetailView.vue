@@ -8,26 +8,26 @@
         </div>
         <div class="flex items-center gap-3">
           <a v-if="project.staging_url" :href="project.staging_url" target="_blank"
-            class="text-sm text-indigo-600 hover:underline">Staging</a>
+            class="text-sm text-indigo-600 hover:underline">{{ t("projectDetail.staging") }}</a>
           <a v-if="project.production_url" :href="project.production_url" target="_blank"
-            class="text-sm text-indigo-600 hover:underline">Production</a>
+            class="text-sm text-indigo-600 hover:underline">{{ t("projectDetail.production") }}</a>
           <StatusBadge :status="project.status" />
         </div>
       </div>
     </div>
 
     <div class="flex gap-4 border-b mb-6">
-      <button v-for="tab in tabs" :key="tab" @click="activeTab = tab" :class="tabClass(tab)">{{ tab }}</button>
+      <button v-for="tab in tabs" :key="tab" @click="activeTab = tab" :class="tabClass(tab)">{{ t("projectDetail.tab" + tab) }}</button>
     </div>
 
     <!-- Tasks -->
     <div v-if="activeTab === 'Tasks'">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="font-semibold text-gray-700">Tasks</h2>
+        <h2 class="font-semibold text-gray-700">{{ t("projectDetail.tabTasks") }}</h2>
         <button v-if="auth.isDeveloper" @click="$router.push(`/projects/${id}/tasks/create`)"
-          class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-700">New Task</button>
+          class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-700">{{ t("projectDetail.newTask") }}</button>
       </div>
-      <div v-if="tasks.length === 0" class="text-gray-400 text-sm py-8 text-center">No tasks yet.</div>
+      <div v-if="tasks.length === 0" class="text-gray-400 text-sm py-8 text-center">{{ t("projectDetail.noTasks") }}</div>
       <div class="space-y-2">
         <TaskCard v-for="task in tasks" :key="task.id" :task="task" />
       </div>
@@ -37,7 +37,7 @@
     <div v-if="activeTab === 'Messages'" class="flex flex-col">
       <div class="space-y-4 mb-6">
         <div v-if="messages.length === 0" class="text-gray-400 text-sm py-8 text-center">
-          No messages yet. Start the conversation below.
+          {{ t("messages.empty") }}
         </div>
 
         <div v-for="msg in messages" :key="msg.id" class="bg-white rounded-xl shadow px-4 py-3">
@@ -53,7 +53,7 @@
           </div>
           <div class="mt-2 text-gray-700 text-sm whitespace-pre-wrap pl-10">{{ msg.body }}</div>
           <div class="pl-10 mt-1">
-            <button @click="toggleReply(msg.id)" class="text-xs text-indigo-500 hover:text-indigo-700">Reply</button>
+            <button @click="toggleReply(msg.id)" class="text-xs text-indigo-500 hover:text-indigo-700">{{ t("messages.reply") }}</button>
           </div>
 
           <!-- Replies -->
@@ -70,43 +70,43 @@
               </div>
               <div class="mt-1 text-gray-600 text-sm whitespace-pre-wrap pl-8">{{ r.body }}</div>
               <div class="pl-8 mt-1">
-                <button @click="toggleReply(msg.id)" class="text-xs text-indigo-400 hover:text-indigo-600">Reply</button>
+                <button @click="toggleReply(msg.id)" class="text-xs text-indigo-400 hover:text-indigo-600">{{ t("messages.reply") }}</button>
               </div>
             </div>
           </div>
 
           <!-- Reply input -->
           <div v-if="replyingTo === msg.id" class="pl-10 mt-3 flex gap-2">
-            <input v-model="replyBody" :placeholder="`Reply to ${msg.user?.name}...`" @keyup.enter="sendReply(msg.id)"
+            <input v-model="replyBody" :placeholder="t('messages.replyTo', { name: msg.user?.name })" @keyup.enter="sendReply(msg.id)"
               class="flex-1 border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
             <button @click="sendReply(msg.id)"
-              class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-700">Reply</button>
-            <button @click="cancelReply" class="px-3 py-1.5 border rounded-lg text-sm text-gray-500">Cancel</button>
+              class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-700">{{ t("messages.reply") }}</button>
+            <button @click="cancelReply" class="px-3 py-1.5 border rounded-lg text-sm text-gray-500">{{ t("common.cancel") }}</button>
           </div>
         </div>
       </div>
 
       <form @submit.prevent="sendMessage" class="flex gap-2 sticky bottom-4">
-        <input v-model="newMessage" placeholder="Type a message..."
+        <input v-model="newMessage" :placeholder="t('messages.typePlaceholder')"
           class="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-        <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Send</button>
+        <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">{{ t("messages.send") }}</button>
       </form>
     </div>
 
     <!-- Invoices -->
     <div v-if="activeTab === 'Invoices'">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="font-semibold text-gray-700">Invoices</h2>
+        <h2 class="font-semibold text-gray-700">{{ t("projectDetail.tabInvoices") }}</h2>
         <button v-if="auth.isDeveloper" @click="$router.push(`/projects/${id}/invoices/create`)"
-          class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-700">New Invoice</button>
+          class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-700">{{ t("projectDetail.newInvoice") }}</button>
       </div>
-      <div v-if="invoices.length === 0" class="text-gray-400 text-sm py-8 text-center">No invoices yet.</div>
+      <div v-if="invoices.length === 0" class="text-gray-400 text-sm py-8 text-center">{{ t("projectDetail.noInvoices") }}</div>
       <div class="space-y-2">
         <div v-for="inv in invoices" :key="inv.id"
           class="bg-white rounded-xl shadow px-5 py-4 flex justify-between items-center">
           <div>
-            <div class="font-medium">{{ inv.invoice_number || ('Invoice #' + inv.id) }}</div>
-            <div class="text-sm text-gray-400">Due: {{ formatDate(inv.due_at) }}</div>
+            <div class="font-medium">{{ inv.invoice_number || t("projectDetail.invoiceFallback", { id: inv.id }) }}</div>
+            <div class="text-sm text-gray-400">{{ t("common.due") }}: {{ formatDate(inv.due_at) }}</div>
           </div>
           <div class="flex items-center gap-3">
             <span class="font-semibold">{{ formatMoney(inv.total) }}</span>
@@ -121,10 +121,14 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import api from '../api'
+import { activeDateLocale } from '../i18n'
 import { useAuthStore } from '../stores/auth'
 import StatusBadge from '../components/StatusBadge.vue'
 import TaskCard from '../components/TaskCard.vue'
+
+const { t } = useI18n()
 
 const route = useRoute()
 const id = route.params.id
@@ -152,7 +156,7 @@ function formatMoney(amount) {
 
 function formatDate(d) {
   if (!d) return ''
-  return new Date(d).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return new Date(d).toLocaleString(activeDateLocale(), { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 function initials(name) {

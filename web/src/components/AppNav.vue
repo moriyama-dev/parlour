@@ -1,25 +1,29 @@
 <template>
-  <nav class="bg-white shadow-sm border-b px-6 py-3 flex justify-between items-center">
+  <nav class="bg-white/85 backdrop-blur border-b border-mist px-6 py-3 flex justify-between items-center sticky top-0 z-40"
+    style="box-shadow: 0 8px 20px rgba(16,35,58,0.05)">
     <div class="flex items-center gap-8">
-      <span class="text-xl font-bold text-indigo-600">Parlour</span>
+      <router-link :to="auth.isClient ? '/client/dashboard' : '/dashboard'" class="flex items-center gap-2.5">
+        <img src="/logo.png" alt="Takumi" class="h-8 w-8 object-contain" />
+        <span class="font-serif text-xl font-semibold tracking-tight text-ink leading-none">Takumi<span class="text-gold"> Web Services</span></span>
+      </router-link>
       <div class="flex gap-5">
         <template v-if="auth.isDeveloper">
           <router-link to="/dashboard" active-class="text-indigo-600 font-medium"
-            class="text-sm text-gray-600 hover:text-indigo-600 transition">Dashboard</router-link>
+            class="text-sm text-gray-600 hover:text-indigo-600 transition">{{ t("nav.dashboard") }}</router-link>
           <router-link to="/companies" active-class="text-indigo-600 font-medium"
-            class="text-sm text-gray-600 hover:text-indigo-600 transition">Companies</router-link>
+            class="text-sm text-gray-600 hover:text-indigo-600 transition">{{ t("nav.companies") }}</router-link>
           <router-link to="/clients" active-class="text-indigo-600 font-medium"
-            class="text-sm text-gray-600 hover:text-indigo-600 transition">Clients</router-link>
+            class="text-sm text-gray-600 hover:text-indigo-600 transition">{{ t("nav.clients") }}</router-link>
           <router-link to="/projects" active-class="text-indigo-600 font-medium"
-            class="text-sm text-gray-600 hover:text-indigo-600 transition">Projects</router-link>
+            class="text-sm text-gray-600 hover:text-indigo-600 transition">{{ t("nav.projects") }}</router-link>
           <router-link to="/messages" active-class="text-indigo-600 font-medium"
-            class="text-sm text-gray-600 hover:text-indigo-600 transition">Messages</router-link>
+            class="text-sm text-gray-600 hover:text-indigo-600 transition">{{ t("nav.messages") }}</router-link>
         </template>
         <template v-if="auth.isClient">
           <router-link to="/client/dashboard" active-class="text-indigo-600 font-medium"
-            class="text-sm text-gray-600 hover:text-indigo-600 transition">Dashboard</router-link>
+            class="text-sm text-gray-600 hover:text-indigo-600 transition">{{ t("nav.dashboard") }}</router-link>
           <router-link to="/messages" active-class="text-indigo-600 font-medium"
-            class="text-sm text-gray-600 hover:text-indigo-600 transition">Messages</router-link>
+            class="text-sm text-gray-600 hover:text-indigo-600 transition">{{ t("nav.messages") }}</router-link>
         </template>
       </div>
     </div>
@@ -38,13 +42,13 @@
         <div v-if="showNotifications"
           class="absolute right-0 top-8 w-80 bg-white rounded-xl shadow-lg border z-50 overflow-hidden">
           <div class="flex justify-between items-center px-4 py-3 border-b">
-            <span class="font-semibold text-sm text-gray-700">Notifications</span>
+            <span class="font-semibold text-sm text-gray-700">{{ t("notif.title") }}</span>
             <button v-if="unreadCount > 0" @click="markAllRead"
-              class="text-xs text-indigo-500 hover:text-indigo-700">Mark all read</button>
+              class="text-xs text-indigo-500 hover:text-indigo-700">{{ t("notif.markAllRead") }}</button>
           </div>
           <div class="max-h-80 overflow-y-auto">
             <div v-if="notifications.length === 0" class="px-4 py-6 text-center text-sm text-gray-400">
-              No notifications
+              {{ t("notif.empty") }}
             </div>
             <div v-for="n in notifications" :key="n.id"
               @click="markRead(n)"
@@ -57,8 +61,9 @@
         </div>
       </div>
 
+      <LangSwitch />
       <span class="text-sm text-gray-700 font-medium">{{ auth.user?.name }}</span>
-      <button @click="logout" class="text-sm text-gray-400 hover:text-red-500 transition">Logout</button>
+      <button @click="logout" class="text-sm text-gray-400 hover:text-red-500 transition">{{ t("nav.logout") }}</button>
     </div>
   </nav>
 </template>
@@ -66,9 +71,13 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
+import { activeDateLocale } from '../i18n'
+import LangSwitch from './LangSwitch.vue'
 import api from '../api'
 
+const { t } = useI18n()
 const auth = useAuthStore()
 const router = useRouter()
 const unreadCount = ref(0)
@@ -133,16 +142,20 @@ async function markAllRead() {
 
 function notifMessage(n) {
   const d = n.data || {}
-  if (n.type === 'task_pending_review') return 'Task "' + d.task_title + '" is ready for your review.'
-  if (n.type === 'task_approved') return 'Task "' + d.task_title + '" has been approved.'
-  if (n.type === 'task_rejected') return 'Task "' + d.task_title + '" was rejected' + (d.comment ? ': ' + d.comment : '') + '.'
-  if (n.type === 'invoice_sent') return 'Invoice #' + d.invoice_number + ' has been sent to you.'
+  if (n.type === 'task_pending_review') return t('notif.taskPendingReview', { title: d.task_title })
+  if (n.type === 'task_approved') return t('notif.taskApproved', { title: d.task_title })
+  if (n.type === 'task_rejected') {
+    return d.comment
+      ? t('notif.taskRejectedComment', { title: d.task_title, comment: d.comment })
+      : t('notif.taskRejected', { title: d.task_title })
+  }
+  if (n.type === 'invoice_sent') return t('notif.invoiceSent', { number: d.invoice_number })
   return d.message || d.body || n.type
 }
 
 function formatDate(iso) {
   if (!iso) return ''
-  return new Date(iso).toLocaleString()
+  return new Date(iso).toLocaleString(activeDateLocale())
 }
 
 function handleClickOutside(e) {

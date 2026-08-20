@@ -1,37 +1,37 @@
 <template>
   <div class="max-w-3xl mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6">New Invoice</h1>
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">{{ t("invoice.newInvoice") }}</h1>
     <div class="bg-white rounded-xl shadow p-6">
       <form @submit.prevent="submit" class="space-y-4">
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Issued Date</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t("invoice.issuedDate") }}</label>
             <input v-model="form.issued_at" type="date" required class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t("invoice.dueDate") }}</label>
             <input v-model="form.due_at" type="date" required class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Tax Rate (%)</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t("invoice.taxRate") }}</label>
           <input v-model.number="form.tax_rate" type="number" min="0" max="100" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t("invoice.notes") }}</label>
           <textarea v-model="form.notes" rows="2" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
         </div>
 
         <div>
           <div class="flex justify-between items-center mb-2">
-            <h3 class="font-medium text-gray-700">Line Items</h3>
-            <button type="button" @click="addItem" class="text-sm text-indigo-600 hover:underline">+ Add Row</button>
+            <h3 class="font-medium text-gray-700">{{ t("invoice.lineItems") }}</h3>
+            <button type="button" @click="addItem" class="text-sm text-indigo-600 hover:underline">{{ t("invoice.addRow") }}</button>
           </div>
           <div class="space-y-2">
             <div v-for="(item, i) in form.items" :key="i" class="grid grid-cols-12 gap-2 items-center">
-              <input v-model="item.description" placeholder="Description" class="col-span-5 border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              <input v-model.number="item.quantity" type="number" min="1" placeholder="Qty" class="col-span-2 border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              <input v-model.number="item.unit_price" type="number" min="0" placeholder="Price" class="col-span-3 border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <input v-model="item.description" :placeholder="t('invoice.description')" class="col-span-5 border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <input v-model.number="item.quantity" type="number" min="1" :placeholder="t('invoice.qty')" class="col-span-2 border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <input v-model.number="item.unit_price" type="number" min="0" :placeholder="t('invoice.price')" class="col-span-3 border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               <div class="col-span-1 text-sm text-right text-gray-600">¥{{ ((item.quantity || 0) * (item.unit_price || 0)).toLocaleString() }}</div>
               <button type="button" @click="removeItem(i)" class="col-span-1 text-red-400 hover:text-red-600 text-sm">x</button>
             </div>
@@ -39,14 +39,14 @@
         </div>
 
         <div class="border-t pt-4 text-right space-y-1">
-          <div class="text-sm text-gray-600">Subtotal: ¥{{ subtotal.toLocaleString() }}</div>
-          <div class="text-sm text-gray-600">Tax ({{ form.tax_rate }}%): ¥{{ taxAmount.toLocaleString() }}</div>
-          <div class="font-bold text-lg">Total: ¥{{ total.toLocaleString() }}</div>
+          <div class="text-sm text-gray-600">{{ t("invoice.subtotal") }}: ¥{{ subtotal.toLocaleString() }}</div>
+          <div class="text-sm text-gray-600">{{ t("invoice.taxWithRate", { rate: form.tax_rate }) }}: ¥{{ taxAmount.toLocaleString() }}</div>
+          <div class="font-bold text-lg">{{ t("invoice.total") }}: ¥{{ total.toLocaleString() }}</div>
         </div>
 
         <div class="flex gap-3 justify-end">
-          <button type="button" @click="$router.back()" class="px-4 py-2 border rounded-lg">Cancel</button>
-          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Create Invoice</button>
+          <button type="button" @click="$router.back()" class="px-4 py-2 border rounded-lg">{{ t("common.cancel") }}</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">{{ t("invoice.createInvoice") }}</button>
         </div>
       </form>
     </div>
@@ -56,8 +56,10 @@
 <script setup>
 import { ref, computed } from "vue"
 import { useRoute, useRouter } from "vue-router"
+import { useI18n } from "vue-i18n"
 import api from "../api"
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const id = route.params.id

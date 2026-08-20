@@ -1,17 +1,17 @@
 <template>
   <div class="max-w-4xl mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold text-gray-800">Companies</h1>
+      <h1 class="text-2xl font-bold text-gray-800">{{ t("nav.companies") }}</h1>
       <button @click="openCreate" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
-        + Add Company
+        {{ t("companies.addCompany") }}
       </button>
     </div>
 
-    <div v-if="loading" class="text-center text-gray-400 py-16">Loading...</div>
+    <div v-if="loading" class="text-center text-gray-400 py-16">{{ t("common.loading") }}</div>
 
     <div v-else-if="companies.length === 0" class="text-center text-gray-400 py-16">
       <div class="text-5xl mb-4">🏢</div>
-      <p class="text-lg font-medium">No companies yet</p>
+      <p class="text-lg font-medium">{{ t("companies.noCompanies") }}</p>
     </div>
 
     <div v-else class="space-y-3">
@@ -20,12 +20,10 @@
         <div class="cursor-pointer flex-1" @click="openDetail(c)">
           <div class="font-semibold text-gray-800 hover:text-indigo-600 transition">{{ c.name }}</div>
           <div class="flex items-center gap-3 text-sm mt-1">
-            <span class="text-gray-500">
-              <span class="font-medium text-gray-700">{{ c.users_count ?? 0 }}</span> client{{ (c.users_count ?? 0) !== 1 ? 's' : '' }}
-            </span>
+            <span class="text-gray-500">{{ t("companies.clientsCount", c.users_count ?? 0) }}</span>
             <span v-if="(c.pending_invites_count ?? 0) > 0"
               class="inline-flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full text-xs font-medium">
-              ✉ {{ c.pending_invites_count }} invite{{ c.pending_invites_count !== 1 ? 's' : '' }} pending
+              ✉ {{ t("companies.invitesPending", c.pending_invites_count) }}
             </span>
             <span v-if="c.website" class="text-gray-400">
               <a :href="c.website" target="_blank" @click.stop class="hover:text-indigo-500">{{ c.website }}</a>
@@ -33,8 +31,8 @@
           </div>
         </div>
         <div class="flex gap-2 ml-4">
-          <button @click="openEdit(c)" class="text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50">Edit</button>
-          <button @click="openInvite(c)" class="text-sm border border-indigo-300 text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-50">Invite</button>
+          <button @click="openEdit(c)" class="text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50">{{ t("common.edit") }}</button>
+          <button @click="openInvite(c)" class="text-sm border border-indigo-300 text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-50">{{ t("companies.invite") }}</button>
         </div>
       </div>
     </div>
@@ -51,17 +49,17 @@
           <button @click="detail = null" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
         </div>
 
-        <div v-if="detailLoading" class="flex-1 flex items-center justify-center text-gray-400">Loading...</div>
+        <div v-if="detailLoading" class="flex-1 flex items-center justify-center text-gray-400">{{ t("common.loading") }}</div>
         <div v-else class="flex-1 px-6 py-5 space-y-8">
 
           <!-- Registered Clients -->
           <div>
             <div class="flex justify-between items-center mb-3">
-              <h3 class="font-semibold text-gray-700">Registered Clients</h3>
+              <h3 class="font-semibold text-gray-700">{{ t("companies.registeredClients") }}</h3>
               <span class="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full">{{ detail.users?.length ?? 0 }}</span>
             </div>
             <div v-if="!detail.users?.length" class="text-sm text-gray-400 bg-gray-50 rounded-lg px-4 py-6 text-center">
-              No clients yet. Send an invite link to get started.
+              {{ t("companies.noClients") }}
             </div>
             <div v-else class="space-y-2">
               <div v-for="u in detail.users" :key="u.id"
@@ -71,7 +69,7 @@
                   <div class="text-xs text-gray-400">{{ u.email }}</div>
                 </div>
                 <span v-if="u.is_primary"
-                  class="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">Primary</span>
+                  class="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">{{ t("companies.primary") }}</span>
               </div>
             </div>
           </div>
@@ -79,22 +77,22 @@
           <!-- Invitations -->
           <div>
             <div class="flex justify-between items-center mb-3">
-              <h3 class="font-semibold text-gray-700">Invitations</h3>
+              <h3 class="font-semibold text-gray-700">{{ t("companies.invitations") }}</h3>
               <button @click="openInvite(detail)"
                 class="text-xs text-indigo-600 border border-indigo-300 px-3 py-1 rounded-lg hover:bg-indigo-50">
-                + New Invite
+                {{ t("companies.newInvite") }}
               </button>
             </div>
             <div v-if="!detail.invitations?.length" class="text-sm text-gray-400 bg-gray-50 rounded-lg px-4 py-6 text-center">
-              No invitations sent yet.
+              {{ t("companies.noInvitations") }}
             </div>
             <div v-else class="space-y-2">
               <div v-for="inv in detail.invitations" :key="inv.id"
                 class="bg-gray-50 rounded-lg px-4 py-3">
                 <div class="flex justify-between items-start">
                   <div>
-                    <div class="text-sm font-medium text-gray-800">{{ inv.email || 'No email specified' }}</div>
-                    <div class="text-xs text-gray-400 mt-0.5">Sent by {{ inv.created_by }}</div>
+                    <div class="text-sm font-medium text-gray-800">{{ inv.email || t("companies.noEmailSpecified") }}</div>
+                    <div class="text-xs text-gray-400 mt-0.5">{{ t("companies.sentBy", { name: inv.created_by }) }}</div>
                   </div>
                   <span :class="inviteStatusClass(inv)" class="text-xs px-2 py-0.5 rounded-full font-medium">
                     {{ inviteStatusLabel(inv) }}
@@ -104,12 +102,12 @@
                   <span class="text-xs text-gray-400 font-mono truncate flex-1">{{ inviteUrlFor(inv) }}</span>
                   <button @click="copyText(inviteUrlFor(inv), inv.id)"
                     class="text-xs text-indigo-600 hover:underline whitespace-nowrap">
-                    {{ copiedId === inv.id ? 'Copied!' : 'Copy' }}
+                    {{ copiedId === inv.id ? t("companies.copied") : t("companies.copy") }}
                   </button>
                 </div>
                 <div class="text-xs text-gray-400 mt-1">
-                  Expires: {{ formatDate(inv.expires_at) }}
-                  <span v-if="inv.accepted_at"> · Accepted: {{ formatDate(inv.accepted_at) }}</span>
+                  {{ t("companies.expires") }}: {{ formatDate(inv.expires_at) }}
+                  <span v-if="inv.accepted_at"> · {{ t("companies.acceptedLabel") }}: {{ formatDate(inv.accepted_at) }}</span>
                 </div>
               </div>
             </div>
@@ -121,26 +119,26 @@
     <!-- Create / Edit Modal -->
     <div v-if="showFormModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
-        <h2 class="text-lg font-semibold mb-4">{{ editingId ? 'Edit Company' : 'Add Company' }}</h2>
+        <h2 class="text-lg font-semibold mb-4">{{ editingId ? t("companies.editCompany") : t("companies.addCompany") }}</h2>
         <form @submit.prevent="saveCompany" class="space-y-3">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Name <span class="text-red-400">*</span></label>
-            <input v-model="form.name" required placeholder="e.g. Toronto Shokokai / Acme Corp"
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t("companies.name") }} <span class="text-red-400">*</span></label>
+            <input v-model="form.name" required :placeholder="t('companies.namePlaceholder')"
               class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Slug <span class="text-red-400">*</span></label>
-            <input v-model="form.slug" required placeholder="e.g. toronto-shokokai"
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t("companies.slug") }} <span class="text-red-400">*</span></label>
+            <input v-model="form.slug" required :placeholder="t('companies.slugPlaceholder')"
               class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            <p class="text-xs text-gray-400 mt-1">Auto-filled. Lowercase, hyphens only.</p>
+            <p class="text-xs text-gray-400 mt-1">{{ t("companies.slugHint") }}</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Website</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t("companies.website") }}</label>
             <input v-model="form.website" type="url" placeholder="https://example.com"
               class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t("companies.timezone") }}</label>
             <select v-model="form.timezone"
               class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
               <option v-for="tz in timezones" :key="tz" :value="tz">{{ tz }}</option>
@@ -148,10 +146,10 @@
           </div>
           <p v-if="formError" class="text-red-500 text-sm">{{ formError }}</p>
           <div class="flex gap-3 justify-end pt-2">
-            <button type="button" @click="showFormModal = false" class="px-4 py-2 border rounded-lg">Cancel</button>
+            <button type="button" @click="showFormModal = false" class="px-4 py-2 border rounded-lg">{{ t("common.cancel") }}</button>
             <button type="submit" :disabled="saving"
               class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-              {{ saving ? 'Saving...' : (editingId ? 'Save Changes' : 'Add Company') }}
+              {{ saving ? t("companies.saving") : (editingId ? t("companies.saveChanges") : t("companies.addCompany")) }}
             </button>
           </div>
         </form>
@@ -161,34 +159,34 @@
     <!-- Invite Modal -->
     <div v-if="showInviteModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
-        <h2 class="text-lg font-semibold mb-1">Invite Client</h2>
-        <p class="text-sm text-gray-500 mb-4">Company: <span class="font-medium text-gray-700">{{ inviteCompanyName }}</span></p>
+        <h2 class="text-lg font-semibold mb-1">{{ t("projects.inviteClient") }}</h2>
+        <p class="text-sm text-gray-500 mb-4">{{ t("companies.company") }}: <span class="font-medium text-gray-700">{{ inviteCompanyName }}</span></p>
         <div v-if="!inviteUrl" class="space-y-3">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Client Email (optional)</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t("companies.clientEmailOptional") }}</label>
             <input v-model="inviteEmail" type="email" placeholder="client@example.com"
               class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            <p class="text-xs text-gray-400 mt-1">Pre-fills the signup form for the client.</p>
+            <p class="text-xs text-gray-400 mt-1">{{ t("companies.prefills") }}</p>
           </div>
           <p v-if="inviteError" class="text-red-500 text-sm">{{ inviteError }}</p>
           <div class="flex gap-3 justify-end pt-2">
-            <button type="button" @click="closeInviteModal" class="px-4 py-2 border rounded-lg">Cancel</button>
+            <button type="button" @click="closeInviteModal" class="px-4 py-2 border rounded-lg">{{ t("common.cancel") }}</button>
             <button @click="generateInvite" :disabled="inviteLoading"
               class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-              {{ inviteLoading ? 'Generating...' : 'Generate Invite Link' }}
+              {{ inviteLoading ? t("projects.generating") : t("projects.generateLink") }}
             </button>
           </div>
         </div>
         <div v-else class="space-y-4">
-          <p class="text-sm text-gray-600">Share this link. Expires in <strong>7 days</strong>.</p>
+          <p class="text-sm text-gray-600">{{ t("projects.shareLink") }} <strong>{{ t("projects.expires") }}</strong></p>
           <div class="bg-gray-50 border rounded-lg p-3 break-all text-sm font-mono text-gray-800">{{ inviteUrl }}</div>
           <div class="flex gap-3">
             <button @click="copyInviteUrl"
               class="flex-1 border border-indigo-600 text-indigo-600 py-2 rounded-lg hover:bg-indigo-50">
-              {{ copied ? '✓ Copied!' : 'Copy Link' }}
+              {{ copied ? t("projects.copied") : t("projects.copyLink") }}
             </button>
             <button @click="closeInviteModal"
-              class="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">Done</button>
+              class="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">{{ t("projects.done") }}</button>
           </div>
         </div>
       </div>
@@ -198,8 +196,11 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import api from '../api'
+import { activeDateLocale } from '../i18n'
 
+const { t } = useI18n()
 const companies = ref([])
 const loading = ref(true)
 const detail = ref(null)
@@ -281,7 +282,7 @@ async function saveCompany() {
     await fetchCompanies()
   } catch (e) {
     formError.value = e.response?.data?.message ||
-      Object.values(e.response?.data?.errors || {}).flat().join(' ') || 'Failed to save'
+      Object.values(e.response?.data?.errors || {}).flat().join(' ') || t('companies.failedSave')
   } finally {
     saving.value = false
   }
@@ -311,7 +312,7 @@ async function generateInvite() {
     }
     await fetchCompanies()
   } catch (e) {
-    inviteError.value = e.response?.data?.message || 'Failed to generate invite'
+    inviteError.value = e.response?.data?.message || t('projects.inviteFailed')
   } finally {
     inviteLoading.value = false
   }
@@ -370,9 +371,9 @@ function closeInviteModal() {
 }
 
 function inviteStatusLabel(inv) {
-  if (inv.accepted_at) return 'Accepted'
-  if (inv.is_expired) return 'Expired'
-  return 'Pending'
+  if (inv.accepted_at) return t('companies.statusAccepted')
+  if (inv.is_expired) return t('companies.statusExpired')
+  return t('companies.statusPending')
 }
 
 function inviteStatusClass(inv) {
@@ -383,6 +384,6 @@ function inviteStatusClass(inv) {
 
 function formatDate(d) {
   if (!d) return '—'
-  return new Date(d).toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' })
+  return new Date(d).toLocaleDateString(activeDateLocale(), { year: 'numeric', month: 'short', day: 'numeric' })
 }
 </script>

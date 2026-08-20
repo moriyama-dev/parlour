@@ -2,10 +2,10 @@
   <div class="max-w-4xl mx-auto px-4 py-8">
     <!-- Header -->
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold text-gray-800">Clients</h1>
+      <h1 class="text-2xl font-bold text-gray-800">{{ t("nav.clients") }}</h1>
       <button @click="openInviteModal"
         class="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition">
-        <span class="text-lg leading-none">+</span> Invite Client
+        <span class="text-lg leading-none">+</span> {{ t("projects.inviteClient") }}
       </button>
     </div>
 
@@ -28,19 +28,19 @@
 
     <!-- Search (active & all tabs) -->
     <div v-if="activeTab !== 'pending'" class="mb-5">
-      <input v-model="search" placeholder="Search by name, email, or company..."
+      <input v-model="search" :placeholder="t('clients.searchPlaceholder')"
         class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="text-center text-gray-400 py-16">Loading...</div>
+    <div v-if="loading" class="text-center text-gray-400 py-16">{{ t("common.loading") }}</div>
 
     <!-- Active / All Clients List -->
     <template v-else-if="activeTab !== 'pending'">
       <div v-if="filteredClients.length === 0" class="text-center text-gray-400 py-16">
         <div class="text-5xl mb-4">👤</div>
-        <p class="text-lg font-medium">{{ search ? 'No results found' : 'No clients yet' }}</p>
-        <p class="text-sm mt-1">{{ search ? 'Try a different search term.' : 'Invite clients using the button above.' }}</p>
+        <p class="text-lg font-medium">{{ search ? t("clients.noResults") : t("clients.noClients") }}</p>
+        <p class="text-sm mt-1">{{ search ? t("clients.tryDifferent") : t("clients.inviteHint") }}</p>
       </div>
       <div v-else class="space-y-3">
         <div v-for="c in filteredClients" :key="c.id"
@@ -64,18 +64,18 @@
           <div class="flex items-center gap-3 text-right flex-shrink-0">
             <div class="text-sm text-gray-500 hidden sm:block">
               <div class="font-medium text-gray-700">{{ totalProjects(c) }}</div>
-              <div class="text-xs">project{{ totalProjects(c) !== 1 ? 's' : '' }}</div>
+              <div class="text-xs">{{ t("clients.projectsWord", totalProjects(c)) }}</div>
             </div>
             <div class="text-xs text-gray-400 hidden sm:block">
-              Joined<br>{{ formatDate(c.created_at) }}
+              {{ t("clients.joined") }}<br>{{ formatDate(c.created_at) }}
             </div>
             <button @click="openEditModal(c)"
               class="text-xs text-gray-500 hover:text-indigo-600 border border-gray-200 hover:border-indigo-300 px-2 py-1.5 rounded-lg transition">
-              Edit
+              {{ t("common.edit") }}
             </button>
             <button @click="confirmRemove(c)"
               class="text-xs text-gray-400 hover:text-red-500 border border-gray-200 hover:border-red-300 px-2 py-1.5 rounded-lg transition">
-              Remove
+              {{ t("clients.remove") }}
             </button>
           </div>
         </div>
@@ -86,8 +86,8 @@
     <template v-else>
       <div v-if="pendingInvites.length === 0" class="text-center text-gray-400 py-16">
         <div class="text-5xl mb-4">✉️</div>
-        <p class="text-lg font-medium">No pending invitations</p>
-        <p class="text-sm mt-1">Use "Invite Client" to generate a registration link.</p>
+        <p class="text-lg font-medium">{{ t("clients.noPendingInvites") }}</p>
+        <p class="text-sm mt-1">{{ t("clients.pendingHint") }}</p>
       </div>
       <div v-else class="space-y-3">
         <div v-for="inv in pendingInvites" :key="inv.id"
@@ -100,7 +100,7 @@
               </svg>
             </div>
             <div>
-              <div class="font-semibold text-gray-800">{{ inv.email || 'No email specified' }}</div>
+              <div class="font-semibold text-gray-800">{{ inv.email || t("companies.noEmailSpecified") }}</div>
               <div class="text-sm text-gray-500">{{ inv.company.name }}</div>
               <div class="flex items-center gap-2 mt-1">
                 <span :class="[
@@ -109,10 +109,10 @@
                     ? 'bg-red-100 text-red-600'
                     : 'bg-amber-100 text-amber-700'
                 ]">
-                  {{ inv.is_expired ? 'Expired' : 'Pending' }}
+                  {{ inv.is_expired ? t("companies.statusExpired") : t("companies.statusPending") }}
                 </span>
                 <span class="text-xs text-gray-400">
-                  {{ inv.is_expired ? 'Expired' : 'Expires' }} {{ formatDate(inv.expires_at) }}
+                  {{ inv.is_expired ? t("companies.statusExpired") : t("companies.expires") }} {{ formatDate(inv.expires_at) }}
                 </span>
               </div>
             </div>
@@ -120,11 +120,11 @@
           <div class="flex items-center gap-2 flex-shrink-0">
             <button v-if="!inv.is_expired" @click="copyInviteUrl(inv.token)"
               class="text-xs text-gray-500 hover:text-indigo-600 border border-gray-200 hover:border-indigo-300 px-2 py-1.5 rounded-lg transition">
-              {{ copiedToken === inv.token ? 'Copied!' : 'Copy URL' }}
+              {{ copiedToken === inv.token ? t("companies.copied") : t("clients.copyUrl") }}
             </button>
             <button @click="confirmCancelInvite(inv)"
               class="text-xs text-gray-400 hover:text-red-500 border border-gray-200 hover:border-red-300 px-2 py-1.5 rounded-lg transition">
-              Cancel
+              {{ t("common.cancel") }}
             </button>
           </div>
         </div>
@@ -135,50 +135,50 @@
     <div v-if="inviteModal.open" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
         <div class="px-6 py-4 border-b flex justify-between items-center">
-          <h2 class="text-lg font-semibold text-gray-800">Invite Client</h2>
+          <h2 class="text-lg font-semibold text-gray-800">{{ t("projects.inviteClient") }}</h2>
           <button @click="closeInviteModal" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
         </div>
         <div class="px-6 py-5 space-y-4">
           <div v-if="!inviteModal.generatedToken">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Company <span class="text-red-500">*</span></label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t("companies.company") }} <span class="text-red-500">*</span></label>
               <select v-model="inviteModal.companyId"
                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="">Select company...</option>
+                <option value="">{{ t("projects.selectCompany") }}</option>
                 <option v-for="c in companies" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Email <span class="text-xs text-gray-400">(optional)</span></label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t("invite.email") }} <span class="text-xs text-gray-400">{{ t("clients.optional") }}</span></label>
               <input v-model="inviteModal.email" type="email" placeholder="client@example.com"
                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              <p class="text-xs text-gray-400 mt-1">Pre-fills the email field on the registration form.</p>
+              <p class="text-xs text-gray-400 mt-1">{{ t("clients.prefillsEmail") }}</p>
             </div>
             <div v-if="inviteModal.error" class="text-sm text-red-500 bg-red-50 rounded-lg p-3">{{ inviteModal.error }}</div>
           </div>
 
           <!-- Generated URL display -->
           <div v-else class="space-y-3">
-            <p class="text-sm text-gray-600">Share this link with your client. It expires in 7 days.</p>
+            <p class="text-sm text-gray-600">{{ t("projects.shareLink") }} {{ t("projects.expires") }}</p>
             <div class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 flex items-center gap-2">
               <span class="text-xs text-gray-700 break-all flex-1 font-mono">{{ inviteUrl(inviteModal.generatedToken) }}</span>
               <button @click="copyInviteUrl(inviteModal.generatedToken)"
                 class="flex-shrink-0 text-xs bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-700 transition">
-                {{ copiedToken === inviteModal.generatedToken ? 'Copied!' : 'Copy' }}
+                {{ copiedToken === inviteModal.generatedToken ? t("companies.copied") : t("companies.copy") }}
               </button>
             </div>
-            <p class="text-xs text-gray-400">Once copied, you can invite another client or close this dialog.</p>
+            <p class="text-xs text-gray-400">{{ t("clients.onceCopied") }}</p>
             <button @click="resetInviteForm"
-              class="text-sm text-indigo-600 hover:underline">+ Invite another client</button>
+              class="text-sm text-indigo-600 hover:underline">{{ t("clients.inviteAnother") }}</button>
           </div>
         </div>
         <div class="px-6 py-4 border-t flex justify-end gap-3">
           <button @click="closeInviteModal"
-            class="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">Close</button>
+            class="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">{{ t("common.close") }}</button>
           <button v-if="!inviteModal.generatedToken" @click="generateInvite"
             :disabled="!inviteModal.companyId || inviteModal.loading"
             class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition">
-            {{ inviteModal.loading ? 'Generating...' : 'Generate Invite Link' }}
+            {{ inviteModal.loading ? t("projects.generating") : t("projects.generateLink") }}
           </button>
         </div>
       </div>
@@ -188,27 +188,27 @@
     <div v-if="editModal.open" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
         <div class="px-6 py-4 border-b flex justify-between items-center">
-          <h2 class="text-lg font-semibold text-gray-800">Edit Client</h2>
+          <h2 class="text-lg font-semibold text-gray-800">{{ t("clients.editClient") }}</h2>
           <button @click="editModal.open = false" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
         </div>
         <div class="px-6 py-5 space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t("companies.name") }}</label>
             <input v-model="editModal.name" type="text"
               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t("invite.email") }}</label>
             <input v-model="editModal.email" type="email"
               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
           <div v-if="editModal.error" class="text-sm text-red-500 bg-red-50 rounded-lg p-3">{{ editModal.error }}</div>
         </div>
         <div class="px-6 py-4 border-t flex justify-end gap-3">
-          <button @click="editModal.open = false" class="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">Cancel</button>
+          <button @click="editModal.open = false" class="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">{{ t("common.cancel") }}</button>
           <button @click="saveEdit" :disabled="editModal.loading"
             class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition">
-            {{ editModal.loading ? 'Saving...' : 'Save Changes' }}
+            {{ editModal.loading ? t("companies.saving") : t("companies.saveChanges") }}
           </button>
         </div>
       </div>
@@ -217,15 +217,15 @@
     <!-- ── Remove Confirmation ── -->
     <div v-if="removing" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm">
-        <h2 class="text-lg font-semibold text-gray-800 mb-2">Remove Client?</h2>
-        <p class="text-sm text-gray-500 mb-5">
-          <strong>{{ removing.name }}</strong> will lose access to all projects. This cannot be undone.
-        </p>
+        <h2 class="text-lg font-semibold text-gray-800 mb-2">{{ t("clients.removeTitle") }}</h2>
+        <i18n-t keypath="clients.removeBody" tag="p" scope="global" class="text-sm text-gray-500 mb-5">
+          <template #name><strong>{{ removing.name }}</strong></template>
+        </i18n-t>
         <div class="flex gap-3">
-          <button @click="removing = null" class="flex-1 border rounded-lg py-2 text-sm">Cancel</button>
+          <button @click="removing = null" class="flex-1 border rounded-lg py-2 text-sm">{{ t("common.cancel") }}</button>
           <button @click="removeClient" :disabled="removeLoading"
             class="flex-1 bg-red-500 text-white rounded-lg py-2 text-sm hover:bg-red-600 disabled:opacity-50">
-            {{ removeLoading ? 'Removing...' : 'Yes, Remove' }}
+            {{ removeLoading ? t("clients.removing") : t("clients.yesRemove") }}
           </button>
         </div>
       </div>
@@ -234,15 +234,15 @@
     <!-- ── Cancel Invite Confirmation ── -->
     <div v-if="cancelingInvite" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm">
-        <h2 class="text-lg font-semibold text-gray-800 mb-2">Cancel Invitation?</h2>
-        <p class="text-sm text-gray-500 mb-5">
-          The invite link for <strong>{{ cancelingInvite.email || 'this invitation' }}</strong> will be permanently deleted.
-        </p>
+        <h2 class="text-lg font-semibold text-gray-800 mb-2">{{ t("clients.cancelInviteTitle") }}</h2>
+        <i18n-t keypath="clients.cancelInviteBody" tag="p" scope="global" class="text-sm text-gray-500 mb-5">
+          <template #email><strong>{{ cancelingInvite.email || t("clients.thisInvitation") }}</strong></template>
+        </i18n-t>
         <div class="flex gap-3">
-          <button @click="cancelingInvite = null" class="flex-1 border rounded-lg py-2 text-sm">Keep</button>
+          <button @click="cancelingInvite = null" class="flex-1 border rounded-lg py-2 text-sm">{{ t("clients.keep") }}</button>
           <button @click="cancelInvite" :disabled="cancelLoading"
             class="flex-1 bg-red-500 text-white rounded-lg py-2 text-sm hover:bg-red-600 disabled:opacity-50">
-            {{ cancelLoading ? 'Canceling...' : 'Yes, Cancel' }}
+            {{ cancelLoading ? t("clients.canceling") : t("clients.yesCancel") }}
           </button>
         </div>
       </div>
@@ -252,8 +252,11 @@
 
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
 import api from '../api'
+import { activeDateLocale } from '../i18n'
 
+const { t } = useI18n()
 const clients = ref([])
 const pendingInvites = ref([])
 const companies = ref([])
@@ -285,8 +288,8 @@ const editModal = reactive({
 })
 
 const tabs = computed(() => [
-  { key: 'active', label: 'Active Clients', count: clients.value.length },
-  { key: 'pending', label: 'Pending Invites', count: pendingInvites.value.length },
+  { key: 'active', label: t('clients.tabActive'), count: clients.value.length },
+  { key: 'pending', label: t('clients.tabPending'), count: pendingInvites.value.length },
 ])
 
 const filteredClients = computed(() => {
@@ -329,7 +332,7 @@ function initials(name) {
 
 function formatDate(d) {
   if (!d) return '—'
-  return new Date(d).toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' })
+  return new Date(d).toLocaleDateString(activeDateLocale(), { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 function inviteUrl(token) {
@@ -389,7 +392,7 @@ async function generateInvite() {
     inviteModal.generatedToken = res.data.token
     pendingInvites.value = [] // will refresh on close
   } catch (e) {
-    inviteModal.error = e.response?.data?.message || 'Failed to generate invite.'
+    inviteModal.error = e.response?.data?.message || t('projects.inviteFailed')
   } finally {
     inviteModal.loading = false
   }
@@ -420,7 +423,7 @@ async function saveEdit() {
     }
     editModal.open = false
   } catch (e) {
-    editModal.error = e.response?.data?.message || 'Failed to save changes.'
+    editModal.error = e.response?.data?.message || t('clients.saveFailed')
   } finally {
     editModal.loading = false
   }
@@ -438,7 +441,7 @@ async function removeClient() {
     clients.value = clients.value.filter(c => c.id !== removing.value.id)
     removing.value = null
   } catch (e) {
-    alert(e.response?.data?.message || 'Failed to remove client')
+    alert(e.response?.data?.message || t('clients.removeFailed'))
   } finally {
     removeLoading.value = false
   }
@@ -456,7 +459,7 @@ async function cancelInvite() {
     pendingInvites.value = pendingInvites.value.filter(i => i.id !== cancelingInvite.value.id)
     cancelingInvite.value = null
   } catch (e) {
-    alert(e.response?.data?.message || 'Failed to cancel invitation')
+    alert(e.response?.data?.message || t('clients.cancelFailed'))
   } finally {
     cancelLoading.value = false
   }

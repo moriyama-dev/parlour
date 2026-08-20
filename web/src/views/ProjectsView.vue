@@ -1,15 +1,15 @@
 <template>
   <div class="max-w-6xl mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold text-gray-800">Projects</h1>
+      <h1 class="text-2xl font-bold text-gray-800">{{ t("projects.title") }}</h1>
       <div class="flex gap-2">
         <button @click="showInviteModal = true"
           class="border border-indigo-600 text-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-50">
-          Invite Client
+          {{ t("projects.inviteClient") }}
         </button>
         <button @click="showModal = true"
           class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
-          New Project
+          {{ t("projects.newProject") }}
         </button>
       </div>
     </div>
@@ -22,7 +22,7 @@
           class="bg-white rounded-xl shadow px-5 py-4 flex justify-between items-center cursor-pointer hover:shadow-md transition">
           <div>
             <div class="font-medium text-gray-800">{{ p.title || p.name }}</div>
-            <div class="text-sm text-gray-400">{{ p.tasks_count || 0 }} tasks</div>
+            <div class="text-sm text-gray-400">{{ t("projects.tasksCount", { count: p.tasks_count || 0 }) }}</div>
           </div>
           <StatusBadge :status="p.status" />
         </div>
@@ -31,30 +31,30 @@
 
     <div v-if="projects.length === 0" class="text-center text-gray-400 py-16">
       <div class="text-5xl mb-4">🏗️</div>
-      <p class="text-lg font-medium">No projects yet</p>
-      <p class="text-sm mt-1">Create your first project to get started.</p>
+      <p class="text-lg font-medium">{{ t("projects.emptyTitle") }}</p>
+      <p class="text-sm mt-1">{{ t("projects.emptyHint") }}</p>
     </div>
 
     <!-- New Project Modal -->
     <div v-if="showModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
-        <h2 class="text-lg font-semibold mb-4">New Project</h2>
+        <h2 class="text-lg font-semibold mb-4">{{ t("projects.newProject") }}</h2>
         <form @submit.prevent="createProject" class="space-y-3">
-          <input v-model="form.title" placeholder="Project name" required
+          <input v-model="form.title" :placeholder="t('projects.name')" required
             class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           <select v-model="form.company_id" required
             class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <option value="">Select company...</option>
+            <option value="">{{ t("projects.selectCompany") }}</option>
             <option v-for="c in companies" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
-          <input v-model="form.staging_url" placeholder="Staging URL (optional)"
+          <input v-model="form.staging_url" :placeholder="t('projects.stagingUrlOptional')"
             class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          <input v-model="form.production_url" placeholder="Production URL (optional)"
+          <input v-model="form.production_url" :placeholder="t('projects.productionUrlOptional')"
             class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           <p v-if="projectError" class="text-red-500 text-sm">{{ projectError }}</p>
           <div class="flex gap-3 justify-end pt-2">
-            <button type="button" @click="showModal = false" class="px-4 py-2 border rounded-lg">Cancel</button>
-            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Create</button>
+            <button type="button" @click="showModal = false" class="px-4 py-2 border rounded-lg">{{ t("common.cancel") }}</button>
+            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">{{ t("common.create") }}</button>
           </div>
         </form>
       </div>
@@ -63,37 +63,37 @@
     <!-- Invite Client Modal -->
     <div v-if="showInviteModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
-        <h2 class="text-lg font-semibold mb-4">Invite Client</h2>
+        <h2 class="text-lg font-semibold mb-4">{{ t("projects.inviteClient") }}</h2>
 
         <div v-if="!inviteUrl" class="space-y-3">
           <select v-model="inviteCompanyId" required
             class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <option value="">Select company to invite for...</option>
+            <option value="">{{ t("projects.inviteSelectCompany") }}</option>
             <option v-for="c in companies" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
-          <input v-model="inviteEmail" type="email" placeholder="Client email (optional — pre-fills the form)"
+          <input v-model="inviteEmail" type="email" :placeholder="t('projects.inviteEmailOptional')"
             class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           <p v-if="inviteError" class="text-red-500 text-sm">{{ inviteError }}</p>
           <div class="flex gap-3 justify-end pt-2">
-            <button type="button" @click="closeInviteModal" class="px-4 py-2 border rounded-lg">Cancel</button>
+            <button type="button" @click="closeInviteModal" class="px-4 py-2 border rounded-lg">{{ t("common.cancel") }}</button>
             <button @click="generateInvite" :disabled="!inviteCompanyId || inviteLoading"
               class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-              {{ inviteLoading ? 'Generating...' : 'Generate Invite Link' }}
+              {{ inviteLoading ? t('projects.generating') : t('projects.generateLink') }}
             </button>
           </div>
         </div>
 
         <div v-else class="space-y-4">
-          <p class="text-sm text-gray-600">Share this link with your client. It expires in <strong>7 days</strong>.</p>
+          <p class="text-sm text-gray-600">{{ t("projects.shareLink") }} <strong>{{ t("projects.expires") }}</strong></p>
           <div class="bg-gray-50 border rounded-lg p-3 break-all text-sm text-gray-800 font-mono">{{ inviteUrl }}</div>
           <div class="flex gap-3">
             <button @click="copyInviteUrl"
               class="flex-1 border border-indigo-600 text-indigo-600 py-2 rounded-lg hover:bg-indigo-50">
-              {{ copied ? '✓ Copied!' : 'Copy Link' }}
+              {{ copied ? t('projects.copied') : t('projects.copyLink') }}
             </button>
             <button @click="closeInviteModal"
               class="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">
-              Done
+              {{ t("projects.done") }}
             </button>
           </div>
         </div>
@@ -104,8 +104,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue"
+import { useI18n } from "vue-i18n"
 import api from "../api"
 import StatusBadge from "../components/StatusBadge.vue"
+
+const { t } = useI18n()
 
 const projects = ref([])
 const companies = ref([])
@@ -123,7 +126,7 @@ const copied = ref(false)
 const grouped = computed(() => {
   const g = {}
   for (const p of projects.value) {
-    const c = p.company?.name || "Unknown"
+    const c = p.company?.name || t("common.none")
     if (!g[c]) g[c] = []
     g[c].push(p)
   }
@@ -162,7 +165,7 @@ async function createProject() {
     projects.value = res.data?.data || res.data || []
     form.value = { title: "", company_id: "", staging_url: "", production_url: "" }
   } catch (e) {
-    projectError.value = e.response?.data?.message || "Failed to create project"
+    projectError.value = e.response?.data?.message || t("projects.createFailed")
   }
 }
 
@@ -175,7 +178,7 @@ async function generateInvite() {
     })
     inviteUrl.value = window.location.origin + "/invite/" + res.data.token
   } catch (e) {
-    inviteError.value = e.response?.data?.message || "Failed to generate invite"
+    inviteError.value = e.response?.data?.message || t("projects.inviteFailed")
   } finally {
     inviteLoading.value = false
   }
