@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\Message;
-use App\Models\Notification;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
@@ -30,7 +29,9 @@ class DemoSeeder extends Seeder
 {
     /** ログイン画面に表示する内容と一致させること。 */
     public const DEV_EMAIL = 'demo-dev@parlour.takumi.ca';
+
     public const CLIENT_EMAIL = 'demo-client@parlour.takumi.ca';
+
     public const PASSWORD = 'demoparlour';
 
     public function run(): void
