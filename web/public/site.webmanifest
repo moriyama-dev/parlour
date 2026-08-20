@@ -1,0 +1,11 @@
+{
+  "name": "Takumi Web Services",
+  "short_name": "Takumi",
+  "icons": [
+    { "src": "/favicon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "/favicon-512.png", "type": "image/png", "sizes": "512x512" }
+  ],
+  "theme_color": "#20324a",
+  "background_color": "#fbf7ef",
+  "display": "standalone"
+}

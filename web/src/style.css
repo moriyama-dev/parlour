@@ -1,1 +1,174 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap");
 @import "tailwindcss";
+
+/*
+  Takumi Web Services design system
+  Warm "paper" backgrounds, deep navy ink, gold accent, soft rounding & shadows.
+  Palette is applied by overriding Tailwind's default color scales so the
+  existing utility classes across every view pick up the new vibe automatically.
+*/
+@theme {
+  --font-sans: "Noto Sans JP", "BIZ UDPGothic", "Hiragino Kaku Gothic ProN",
+    "Yu Gothic", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
+
+  /* Brand tokens */
+  --color-paper: #fbf7ef;
+  --color-sand: #faf5ed;
+  --color-ink: #10233a;
+  --color-navy: #173a63;
+  --color-indigo-brand: #20324a;
+  --color-gold: #c8a46b;
+  --color-gold-soft: #d1b07f;
+  --color-mist: #dce7f2;
+
+  /* --- Neutral (gray) scale → warm paper + navy ink --- */
+  --color-gray-50: #fbf7ef;
+  --color-gray-100: #f5efe4;
+  --color-gray-200: #e7ddcb;
+  --color-gray-300: #d3ddea;
+  --color-gray-400: #9aa8bd;
+  --color-gray-500: #6b7c93;
+  --color-gray-600: #47576f;
+  --color-gray-700: #2f4055;
+  --color-gray-800: #1c2f45;
+  --color-gray-900: #10233a;
+
+  /* --- Primary accent (indigo) → Takumi navy / indigo --- */
+  --color-indigo-50: #eef2f7;
+  --color-indigo-100: #dce7f2;
+  --color-indigo-200: #b9cbe0;
+  --color-indigo-300: #8fa9c6;
+  --color-indigo-400: #4f6d92;
+  --color-indigo-500: #2e6c9a;
+  --color-indigo-600: #20324a;
+  --color-indigo-700: #173a63;
+  --color-indigo-800: #142c46;
+  --color-indigo-900: #10233a;
+
+  /* Blue mirrors the same navy family for consistency */
+  --color-blue-50: #eef2f7;
+  --color-blue-100: #dce7f2;
+  --color-blue-500: #2e6c9a;
+  --color-blue-600: #20324a;
+  --color-blue-700: #173a63;
+
+  /* Amber/yellow accents lean into the brand gold */
+  --color-amber-100: #f5e3be;
+  --color-amber-400: #d1b07f;
+  --color-amber-500: #c8a46b;
+  --color-amber-600: #b89a67;
+
+  --radius-sm: 0.875rem; /* 14px */
+  --radius-md: 1.125rem; /* 18px */
+  --radius-lg: 1.75rem;  /* 28px */
+  --radius-xl: 1.75rem;
+
+  --shadow-sm: 0 8px 20px rgba(16, 35, 58, 0.05);
+  --shadow-md: 0 14px 34px rgba(16, 35, 58, 0.07);
+  --shadow-lg: 0 24px 54px rgba(16, 35, 58, 0.12);
+  --shadow-xl: 0 30px 64px rgba(16, 35, 58, 0.14);
+}
+
+@layer base {
+  html {
+    background-color: var(--color-paper);
+  }
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-ink);
+    background-color: var(--color-paper);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4, .font-serif {
+    font-family: var(--font-serif);
+    letter-spacing: -0.02em;
+  }
+  h1, h2, h3 {
+    color: var(--color-ink);
+  }
+  a {
+    text-decoration: none;
+  }
+}
+
+/* Reusable brand helpers */
+.takumi-gradient {
+  background:
+    radial-gradient(1200px 600px at 100% -10%, rgba(200, 164, 107, 0.14), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(46, 108, 154, 0.10), transparent 55%),
+    var(--color-paper);
+}
+.takumi-card {
+  background: #ffffff;
+  border: 1px solid var(--color-mist);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+.takumi-gold-rule {
+  height: 3px;
+  width: 3rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-gold), var(--color-gold-soft));
+}
+.btn-takumi {
+  background: var(--color-indigo-brand);
+  color: #fff;
+  border-radius: 999px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.btn-takumi:hover {
+  background: var(--color-navy);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+.btn-gold {
+  background: linear-gradient(90deg, var(--color-gold), var(--color-gold-soft));
+  color: #10233a;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+/* JA/EN 言語切替トグル（ナビ・ログイン画面で共用） */
+.takumi-langswitch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--color-mist);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+}
+.takumi-langswitch button {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+  color: var(--color-gray-500);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 5px 10px;
+  border-radius: 999px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.takumi-langswitch button:hover {
+  color: var(--color-ink);
+}
+.takumi-langswitch button.active {
+  background: var(--color-indigo-brand);
+  color: #fff;
+}
+
+/* デモサイトの上部バナー（デモビルドのみ表示） */
+.takumi-demobanner {
+  background: linear-gradient(90deg, var(--color-gold), var(--color-gold-soft));
+  color: #10233a;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  letter-spacing: 0.01em;
+}
