@@ -274,9 +274,9 @@ export default {
     signingIn: "ログイン中...",
     failed: "ログインに失敗しました",
     demo: {
-      heading: "採用担当・見学の方へ",
+      heading: "見学の方へ",
       lead: "下記のデモアカウントでポータル内をご覧いただけます。",
-      developerLabel: "開発者ビュー",
+      developerLabel: "管理者ビュー",
       clientLabel: "クライアントビュー",
       fill: "入力する",
     },

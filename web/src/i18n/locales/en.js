@@ -275,9 +275,9 @@ export default {
     signingIn: "Signing in...",
     failed: "Login failed",
     demo: {
-      heading: "For recruiters & reviewers",
+      heading: "For visitors",
       lead: "Explore the portal with a demo account below.",
-      developerLabel: "Developer view",
+      developerLabel: "Admin view",
       clientLabel: "Client view",
       fill: "Fill in",
     },
