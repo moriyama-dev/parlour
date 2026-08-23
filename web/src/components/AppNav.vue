@@ -1,33 +1,19 @@
 <template>
-  <nav class="bg-white/85 backdrop-blur border-b border-mist px-6 py-3 flex justify-between items-center sticky top-0 z-40"
+  <nav ref="navRef"
+    class="bg-white/85 backdrop-blur border-b border-mist px-4 sm:px-6 py-3 flex justify-between items-center gap-3 sm:gap-4 sticky top-0 z-40"
     style="box-shadow: 0 8px 20px rgba(16,35,58,0.05)">
-    <div class="flex items-center gap-8">
-      <router-link :to="auth.isClient ? '/client/dashboard' : '/dashboard'" class="flex items-center gap-2.5">
-        <img src="/logo.png" alt="Takumi" class="h-8 w-8 object-contain" />
-        <span class="font-serif text-xl font-semibold tracking-tight text-ink leading-none">Takumi<span class="text-gold"> Web Services</span></span>
+    <div class="flex items-center gap-6 xl:gap-8 min-w-0">
+      <router-link :to="auth.isClient ? '/client/dashboard' : '/dashboard'" class="flex items-center gap-2.5 shrink-0">
+        <img src="/logo.png" alt="Takumi" class="h-8 w-8 object-contain shrink-0" />
+        <span class="font-serif text-xl font-semibold tracking-tight text-ink leading-none whitespace-nowrap">Takumi<span class="text-gold hidden sm:inline"> Web Services</span></span>
       </router-link>
-      <div class="flex gap-5">
-        <template v-if="auth.isDeveloper">
-          <router-link to="/dashboard" active-class="text-indigo-600 font-medium"
-            class="text-sm text-gray-600 hover:text-indigo-600 transition">{{ t("nav.dashboard") }}</router-link>
-          <router-link to="/companies" active-class="text-indigo-600 font-medium"
-            class="text-sm text-gray-600 hover:text-indigo-600 transition">{{ t("nav.companies") }}</router-link>
-          <router-link to="/clients" active-class="text-indigo-600 font-medium"
-            class="text-sm text-gray-600 hover:text-indigo-600 transition">{{ t("nav.clients") }}</router-link>
-          <router-link to="/projects" active-class="text-indigo-600 font-medium"
-            class="text-sm text-gray-600 hover:text-indigo-600 transition">{{ t("nav.projects") }}</router-link>
-          <router-link to="/messages" active-class="text-indigo-600 font-medium"
-            class="text-sm text-gray-600 hover:text-indigo-600 transition">{{ t("nav.messages") }}</router-link>
-        </template>
-        <template v-if="auth.isClient">
-          <router-link to="/client/dashboard" active-class="text-indigo-600 font-medium"
-            class="text-sm text-gray-600 hover:text-indigo-600 transition">{{ t("nav.dashboard") }}</router-link>
-          <router-link to="/messages" active-class="text-indigo-600 font-medium"
-            class="text-sm text-gray-600 hover:text-indigo-600 transition">{{ t("nav.messages") }}</router-link>
-        </template>
+      <!-- Inline menu: only when there is room (≥ xl). Narrower widths use the hamburger. -->
+      <div class="hidden xl:flex gap-5">
+        <router-link v-for="l in navLinks" :key="l.to" :to="l.to" active-class="text-indigo-600 font-medium"
+          class="text-sm text-gray-600 hover:text-indigo-600 transition whitespace-nowrap">{{ t(l.key) }}</router-link>
       </div>
     </div>
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-3 sm:gap-4 shrink-0">
       <!-- Notification Bell -->
       <div class="relative" ref="bellRef">
         <button @click="toggleNotifications" class="relative cursor-pointer focus:outline-none">
@@ -61,15 +47,31 @@
         </div>
       </div>
 
-      <LangSwitch />
-      <span class="text-sm text-gray-700 font-medium">{{ auth.user?.name }}</span>
-      <button @click="logout" class="text-sm text-gray-400 hover:text-red-500 transition">{{ t("nav.logout") }}</button>
+      <div class="hidden sm:block"><LangSwitch /></div>
+      <span class="hidden sm:block text-sm text-gray-700 font-medium truncate max-w-[8rem] lg:max-w-[12rem]">{{ auth.user?.name }}</span>
+      <button @click="logout" class="text-sm text-gray-400 hover:text-red-500 transition whitespace-nowrap shrink-0 cursor-pointer">{{ t("nav.logout") }}</button>
+
+      <!-- Hamburger: collapses the menu below xl so the bar never overflows -->
+      <button v-if="navLinks.length" @click="toggleMenu"
+        class="xl:hidden text-2xl leading-none text-gray-600 hover:text-indigo-600 transition shrink-0 cursor-pointer focus:outline-none"
+        :aria-expanded="showMenu" aria-label="Menu">☰</button>
+    </div>
+
+    <!-- Collapsed menu panel (below xl) -->
+    <div v-if="showMenu"
+      class="xl:hidden absolute top-full left-0 right-0 bg-white border-b border-mist flex flex-col px-4 sm:px-6 py-2"
+      style="box-shadow: 0 8px 20px rgba(16,35,58,0.05)">
+      <router-link v-for="l in navLinks" :key="l.to" :to="l.to" @click="showMenu = false"
+        active-class="text-indigo-600 font-medium"
+        class="text-sm text-gray-600 hover:text-indigo-600 transition py-2">{{ t(l.key) }}</router-link>
+      <!-- Language switch for very narrow widths where it is hidden from the bar -->
+      <div class="sm:hidden pt-2 mt-1 border-t border-mist"><LangSwitch /></div>
     </div>
   </nav>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
@@ -84,6 +86,28 @@ const unreadCount = ref(0)
 const notifications = ref([])
 const showNotifications = ref(false)
 const bellRef = ref(null)
+const navRef = ref(null)
+const showMenu = ref(false)
+
+// メニュー項目はロールごとに1か所で定義し、横並びと折りたたみの両方で使う。
+const navLinks = computed(() => {
+  if (auth.isDeveloper) return [
+    { to: '/dashboard', key: 'nav.dashboard' },
+    { to: '/companies', key: 'nav.companies' },
+    { to: '/clients', key: 'nav.clients' },
+    { to: '/projects', key: 'nav.projects' },
+    { to: '/messages', key: 'nav.messages' },
+  ]
+  if (auth.isClient) return [
+    { to: '/client/dashboard', key: 'nav.dashboard' },
+    { to: '/messages', key: 'nav.messages' },
+  ]
+  return []
+})
+
+function toggleMenu() {
+  showMenu.value = !showMenu.value
+}
 
 async function loadNotifications() {
   if (!auth.isAuthenticated) return
@@ -161,6 +185,9 @@ function formatDate(iso) {
 function handleClickOutside(e) {
   if (bellRef.value && !bellRef.value.contains(e.target)) {
     showNotifications.value = false
+  }
+  if (navRef.value && !navRef.value.contains(e.target)) {
+    showMenu.value = false
   }
 }
 
