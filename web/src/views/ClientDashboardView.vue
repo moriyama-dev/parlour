@@ -27,7 +27,7 @@
           <div class="font-medium text-gray-800">{{ task.title }}</div>
           <div class="text-sm text-gray-500">{{ task.projectName }}</div>
         </div>
-        <button @click="$router.push(`/client/tasks/${task.id}`)"
+        <button @click="reviewTask(task.id)"
           class="bg-yellow-500 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-yellow-600">{{ t("clientDashboard.reviewNow") }}</button>
       </div>
     </div>
@@ -67,11 +67,17 @@
 
 <script setup>
 import { ref, onMounted } from "vue"
+import { useRouter } from "vue-router"
 import { useI18n } from "vue-i18n"
 import api from "../api"
 import { activeDateLocale } from "../i18n"
 
 const { t, te } = useI18n()
+const router = useRouter()
+
+function reviewTask(id) {
+  router.push(`/client/tasks/${id}`)
+}
 const projects = ref([])
 const pendingTasks = ref([])
 const allTasks = ref([])
@@ -124,12 +130,12 @@ onMounted(async () => {
         ])
         const tasks = tRes.data?.data || tRes.data || []
         tasks.forEach(t => {
-          const item = { ...t, projectName: p.name }
+          const item = { ...t, projectName: p.title }
           allTasks.value.push(item)
           if (t.status === "pending_review") pendingTasks.value.push(item)
         })
         const msgs = mRes.data?.data || mRes.data || []
-        msgs.forEach(m => allMsgs.push({ ...m, projectName: p.name }))
+        msgs.forEach(m => allMsgs.push({ ...m, projectName: p.title }))
       } catch {}
     }
 
