@@ -10,6 +10,23 @@ use Illuminate\Http\Request;
 
 class CompanyController extends Controller
 {
+    /**
+     * 呼び出した本人が案件を作れる会社。
+     *
+     * 顧客は /companies（開発者専用）を引けないので、案件作成フォームの選択肢は
+     * ここから取る。開発者には全社を返すため、フォームは1本で済む。
+     */
+    public function mine(Request $request)
+    {
+        $user = $request->user();
+
+        $companies = $user->role === 'developer'
+            ? Company::orderBy('name')->get()
+            : $user->companies()->orderBy('name')->get();
+
+        return CompanyResource::collection($companies);
+    }
+
     public function index()
     {
         $companies = Company::withCount('users')

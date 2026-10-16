@@ -94,7 +94,11 @@ class InvoiceController extends Controller
 
     public function markPaid(Project $project, Invoice $invoice)
     {
-        $invoice->update(['status' => 'paid']);
+        // paid_at は領収書の発行日になる。二重に入金記録を付けても最初の日付を残す。
+        $invoice->update([
+            'status' => 'paid',
+            'paid_at' => $invoice->paid_at ?? now(),
+        ]);
 
         return new InvoiceResource($invoice->load('items'));
     }

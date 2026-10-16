@@ -28,6 +28,18 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    /*
+     * サブスクの自動引き落とし。鍵は .env にだけ置く（CLAUDE.md §2-3）。
+     * secret が空なら Stripe 連携は無効（デモ・ローカル）で、支払い登録ボタンは出さない。
+     */
+    'stripe' => [
+        'secret' => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'currency' => env('STRIPE_CURRENCY', 'cad'),
+        // カスタマーポータルの設定 id（bpc_...）。空ならダッシュボードの既定の設定。
+        'portal_configuration' => env('STRIPE_PORTAL_CONFIGURATION'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

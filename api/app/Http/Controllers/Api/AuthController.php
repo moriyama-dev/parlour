@@ -16,6 +16,15 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
+        // デモ用アカウントの資格情報は公開されている（DemoSeeder と web/src/demo.js に
+        // 平文で入っており、GitHub にも載っている）。デモホスト以外でこれを通すと、
+        // 匿名の 1 リクエストで developer 権限を渡すことになる。過去にシードされた行が
+        // 残っている環境もあるので、行の有無ではなくログインの時点で塞ぐ。
+        if (! config('demo.enabled')
+            && in_array(mb_strtolower($credentials['email']), config('demo.accounts', []), true)) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
+        }
+
         if (! Auth::attempt($credentials)) {
             return response()->json(['message' => 'Invalid credentials'], 401);
         }

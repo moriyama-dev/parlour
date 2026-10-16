@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\Message;
 use App\Models\Project;
+use App\Models\Subscription;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -32,6 +33,8 @@ class DemoSeeder extends Seeder
 
     public const CLIENT_EMAIL = 'demo-client@parlour.takumi.ca';
 
+    // これらを変えたら config/demo.php の 'accounts' も必ず合わせること。
+    // ログイン側はそちらのリストを見て、デモホスト以外でのデモ資格情報を拒否する。
     public const PASSWORD = 'demoparlour';
 
     public function run(): void
@@ -135,6 +138,47 @@ class DemoSeeder extends Seeder
             $invoice->items()->createMany([
                 ['description' => 'Website renewal — design & build', 'quantity' => 1, 'unit_price' => 450000, 'amount' => 450000],
                 ['description' => 'Monthly maintenance (June)', 'quantity' => 1, 'unit_price' => 30000, 'amount' => 30000],
+            ]);
+
+            // サブスク。デモには Stripe の鍵が無いので、支払い登録ボタンは「デモでは無効」と出る。
+            // 稼働中・登録待ちの両方を置き、どちらの画面も見られるようにする。
+            $company->subscriptions()->delete(); // 支払い履歴は外部キーの cascade で消える
+            // 日付は「今の期間の終わり」から逆算して、開始日・履歴・次回請求日を噛み合わせる。
+            // 正午にしておくのは、UTC の 0 時だとトロント時間で前日に表示されるため。
+            $periodEnd = now()->addDays(12)->setTime(12, 0);
+            $hosting = Subscription::create([
+                'company_id' => $company->id,
+                'name' => 'Hosting & maintenance',
+                'description' => 'Managed hosting, daily backups, security updates and up to 2 hours of small edits per month.',
+                'amount_cents' => 14900,
+                'currency' => 'cad',
+                'interval' => 'month',
+                'status' => 'active',
+                'started_at' => $periodEnd->copy()->subMonths(3),
+                'current_period_end' => $periodEnd,
+            ]);
+            // 開始から今の期間まで3回分（最新は今の期間＝次回請求日で終わるもの）。
+            foreach ([3, 2, 1] as $i => $monthsBefore) {
+                $start = $periodEnd->copy()->subMonths($monthsBefore);
+                $hosting->payments()->create([
+                    'number' => 'DEMO-'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT),
+                    'status' => 'paid',
+                    'amount_due' => 14900,
+                    'amount_paid' => 14900,
+                    'currency' => 'cad',
+                    'period_start' => $start,
+                    'period_end' => $start->copy()->addMonth(),
+                    'paid_at' => $start,
+                ]);
+            }
+            Subscription::create([
+                'company_id' => $company->id,
+                'name' => 'Domain & SSL (annual)',
+                'description' => 'Domain renewal and SSL certificate management.',
+                'amount_cents' => 9000,
+                'currency' => 'cad',
+                'interval' => 'year',
+                'status' => 'pending',
             ]);
 
             Message::create([

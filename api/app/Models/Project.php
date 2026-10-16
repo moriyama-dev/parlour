@@ -37,4 +37,9 @@ class Project extends Model
     {
         return $this->hasMany(Invoice::class);
     }
+
+    public function calls()
+    {
+        return $this->hasMany(Call::class);
+    }
 }

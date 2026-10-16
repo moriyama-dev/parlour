@@ -25,4 +25,9 @@ class Company extends Model
     {
         return $this->hasMany(Invitation::class);
     }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
 }

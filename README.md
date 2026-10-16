@@ -61,6 +61,11 @@ messages the developer, all in one place instead of scattered email threads.
 - **Append-only approval log** — every decision is written as a new immutable row. A later decision
   never overwrites an earlier one, so months later there is a clear record of what was signed off.
 - **Messages** — per-project threads (with replies) between developer and client.
+- **Whiteboards ("Image" menu)** — a Miro-style infinite canvas built in-house: a dashboard of
+  boards (templates, starring, grid / list) and an editor with sticky notes, shapes, text, frames,
+  connectors, freehand pen, comments and image upload, with undo / redo and autosave. A board is
+  private to its creator until it is shared with a project, at which point that project's clients
+  can open and edit it too.
 - **Invoices** — line items, tax, and a status (draft → sent → paid).
 - **In-app notifications** — a feed with read / mark-all-read, for events like a task waiting on the
   client.

@@ -6,7 +6,7 @@ import en from "./locales/en.js"
 //   1. ?lang=en|ja  … 明示選択
 //   2. localStorage … 記憶（テーマ側の Cookie 相当）
 //   3. navigator.language(s) … ブラウザ/OS 設定（Accept-Language 相当）
-//   4. 既定 'ja'
+//      リスト内に日本語があれば 'ja'、無ければ 'en'
 const STORAGE_KEY = "takumi_lang"
 const SUPPORTED = ["ja", "en"]
 const DEFAULT_LOCALE = "ja"
@@ -41,16 +41,16 @@ function detectLocale() {
   // 2. 記憶された選択
   const stored = readStored()
   if (stored) return stored
-  // 3. ブラウザ/OS の言語
+  // 3. ブラウザ/OS の言語 — 優先リストのどこかに日本語があれば日本語ユーザー、
+  //    無ければ英語。先頭一致で判定すると、英語版OS/ブラウザに日本語を追加した
+  //    ["en-US", "ja"] のような日本語ユーザーが英語になってしまう。
   const prefs = navigator.languages && navigator.languages.length
     ? navigator.languages
     : [navigator.language || ""]
-  for (const pref of prefs) {
-    const base = String(pref).toLowerCase().split("-")[0]
-    if (SUPPORTED.includes(base)) return base
-  }
-  // 4. 既定
-  return DEFAULT_LOCALE
+  const isJapanese = prefs.some(
+    (pref) => String(pref).toLowerCase().split("-")[0] === "ja",
+  )
+  return isJapanese ? "ja" : "en"
 }
 
 export const i18n = createI18n({

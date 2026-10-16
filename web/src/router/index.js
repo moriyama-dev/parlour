@@ -8,15 +8,27 @@ const routes = [
   { path: '/dashboard', component: () => import('../views/DashboardView.vue'), meta: { auth: true, role: 'developer' } },
   { path: '/companies', component: () => import('../views/CompaniesView.vue'), meta: { auth: true, role: 'developer' } },
   { path: '/clients', component: () => import('../views/ClientsView.vue'), meta: { auth: true, role: 'developer' } },
-  { path: '/projects', component: () => import('../views/ProjectsView.vue'), meta: { auth: true, role: 'developer' } },
+  // 案件（部屋）は顧客も開ける。作れる会社の照合はサーバー側（ProjectController::store）。
+  { path: '/projects', component: () => import('../views/ProjectsView.vue'), meta: { auth: true } },
   { path: '/messages', component: () => import('../views/MessagesView.vue'), meta: { auth: true } },
+  // 「イメージ」= ホワイトボード。一覧（Miro のダッシュボード相当）と編集画面（ボード相当）。
+  // どちらも開発者・顧客で共通（見える範囲は API 側の Board::visibleTo が決める）。
+  { path: '/boards', component: () => import('../views/BoardsView.vue'), meta: { auth: true } },
+  { path: '/boards/:id', component: () => import('../views/BoardView.vue'), meta: { auth: true, fullscreen: true } },
+  // 料金：サービス内容と、案件をまたいだ請求書・領収書
+  { path: '/billing', component: () => import('../views/BillingView.vue'), meta: { auth: true } },
+  { path: '/billing/invoices/:id', component: () => import('../views/BillingInvoiceView.vue'), meta: { auth: true } },
+  { path: '/billing/invoices/:id/receipt', component: () => import('../views/BillingInvoiceView.vue'), meta: { auth: true } },
   { path: '/projects/:id', component: () => import('../views/ProjectDetailView.vue'), meta: { auth: true } },
   { path: '/projects/:id/tasks/create', component: () => import('../views/TaskCreateView.vue'), meta: { auth: true, role: 'developer' } },
   { path: '/projects/:id/invoices/create', component: () => import('../views/InvoiceCreateView.vue'), meta: { auth: true, role: 'developer' } },
+  // 通話画面は開発者と顧客で共通（アクセス可否は API 側の project.access が見る）
+  { path: '/projects/:id/calls/:callId', component: () => import('../views/CallView.vue'), meta: { auth: true } },
   { path: '/client/dashboard', component: () => import('../views/ClientDashboardView.vue'), meta: { auth: true, role: 'client' } },
   { path: '/client/tasks/:id', component: () => import('../views/ClientTaskView.vue'), meta: { auth: true, role: 'client' } },
   { path: '/client/projects/:id/messages', component: () => import('../views/ClientMessagesView.vue'), meta: { auth: true, role: 'client' } },
-  { path: '/client/invoices/:id', component: () => import('../views/ClientInvoiceView.vue'), meta: { auth: true, role: 'client' } },
+  // 旧リンク（通知やブックマーク）は新しい請求書ページへ送る。
+  { path: '/client/invoices/:id', redirect: (to) => `/billing/invoices/${to.params.id}` },
 ]
 
 const router = createRouter({

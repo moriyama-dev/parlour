@@ -1,9 +1,19 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
-Route::get('/', function () {
-    return view('welcome');
-});
-
-Route::any('/login', fn () => response()->json(['message' => 'Unauthenticated.'], 401))->name('login');
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+| このアプリはベアラトークン専用の REST API で、画面は別ドメイン扱いの Vue SPA。
+| サーバー側で描画する HTML は 1 枚も無いので、ここは意図的に空にしてある。
+|
+| ここにルートを足すと `web` ミドルウェアグループが付き、StartSession が
+| **未認証のリクエストごとに sessions テーブルへ 1 行書く**。以前ここにあった
+| Laravel 既定の welcome ページはそれに該当し、匿名アクセスで DB を無制限に
+| 太らせられる状態だった（実測 5 リクエストで 5 行）。加えて既定ページは
+| フレームワークの正確なバージョンを表示していた。
+|
+| 認証失敗時の応答は bootstrap/app.php の AuthenticationException レンダラが
+| JSON 401 を返すので、`login` という名前付きルートもここには要らない。
+| 保険として routes/api.php 側にステートレスな stub を置いてある。
+*/

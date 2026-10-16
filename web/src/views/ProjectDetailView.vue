@@ -20,6 +20,82 @@
       <button v-for="tab in tabs" :key="tab" @click="activeTab = tab" :class="tabClass(tab)">{{ t("projectDetail.tab" + tab) }}</button>
     </div>
 
+    <!-- 概要：進捗の見える化 -->
+    <div v-if="activeTab === 'Overview'" class="grid gap-6 lg:grid-cols-[1.4fr_1fr] items-start">
+      <section class="bg-white rounded-2xl shadow p-6">
+        <h2 class="font-serif text-lg font-semibold text-ink mb-4">{{ t("projectDetail.progressTitle") }}</h2>
+        <TaskProgressChart :stats="project?.task_stats || {}" />
+      </section>
+
+      <section class="bg-white rounded-2xl shadow p-6">
+        <h2 class="font-serif text-lg font-semibold text-ink mb-4">{{ t("projectDetail.summaryTitle") }}</h2>
+        <p v-if="project?.description" class="text-sm text-gray-600 whitespace-pre-line mb-4">{{ project.description }}</p>
+        <dl class="text-sm divide-y divide-mist">
+          <div v-for="row in summaryRows" :key="row.key" class="flex justify-between gap-4 py-2">
+            <dt class="text-gray-500">{{ t("projectDetail." + row.key) }}</dt>
+            <dd class="text-ink font-medium tabular-nums">{{ row.value }}</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+
+    <!-- イメージ：この案件にリンクされたホワイトボード -->
+    <div v-if="activeTab === 'Boards'">
+      <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
+        <h2 class="font-semibold text-gray-700">{{ t("projectDetail.tabBoards") }}</h2>
+        <div class="flex gap-2">
+          <button @click="openLinkBoard"
+            class="border border-indigo-600 text-indigo-600 px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-50 cursor-pointer">
+            {{ t("projectDetail.linkBoard") }}
+          </button>
+          <button @click="createBoard" :disabled="creatingBoard"
+            class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-60 cursor-pointer">
+            {{ t("projectDetail.newBoard") }}
+          </button>
+        </div>
+      </div>
+      <p class="text-sm text-gray-500 mb-4">{{ t("projectDetail.boardsLead") }}</p>
+      <p v-if="boardError" class="text-sm text-red-500 mb-3">{{ boardError }}</p>
+
+      <div v-if="boards.length === 0" class="text-gray-400 text-sm py-8 text-center">{{ t("projectDetail.noBoards") }}</div>
+      <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div v-for="b in boards" :key="b.id" @click="$router.push(`/boards/${b.id}`)"
+          class="group rounded-2xl border border-mist bg-white shadow-sm hover:shadow-md hover:border-gold transition cursor-pointer overflow-hidden">
+          <div class="aspect-[16/10] bg-sand flex items-center justify-center overflow-hidden border-b border-mist">
+            <img v-if="b.thumbnail" :src="thumbUrl(b.thumbnail)" alt="" class="w-full h-full object-contain p-3" />
+            <span v-else class="text-3xl opacity-30" aria-hidden="true">🗒️</span>
+          </div>
+          <div class="px-4 py-3 flex items-start gap-2">
+            <div class="min-w-0 flex-1">
+              <div class="text-sm font-medium text-ink truncate">{{ b.title }}</div>
+              <div class="text-xs text-gray-400 truncate">{{ b.owner?.name }}</div>
+            </div>
+            <button v-if="b.can_delete" @click.stop="unlinkBoard(b)" :title="t('projectDetail.unlinkBoard')"
+              class="text-xs text-gray-400 hover:text-red-500 cursor-pointer px-1">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 既存ボードのリンク -->
+      <div v-if="showLinkBoard" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" @click.self="showLinkBoard = false">
+        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+          <h3 class="font-semibold mb-1">{{ t("projectDetail.linkBoard") }}</h3>
+          <p class="text-xs text-gray-500 mb-4">{{ t("projectDetail.linkBoardHint") }}</p>
+          <div v-if="linkableBoards.length === 0" class="text-sm text-gray-400 py-6 text-center">{{ t("projectDetail.noLinkableBoards") }}</div>
+          <div v-else class="max-h-72 overflow-y-auto divide-y divide-mist border border-mist rounded-lg">
+            <button v-for="b in linkableBoards" :key="b.id" @click="linkBoard(b)"
+              class="w-full text-left px-3 py-2.5 hover:bg-sand cursor-pointer">
+              <div class="text-sm text-ink truncate">{{ b.title }}</div>
+              <div class="text-xs text-gray-400">{{ b.project ? t("projectDetail.boardLinkedTo", { project: b.project.title }) : t("projectDetail.boardPersonal") }}</div>
+            </button>
+          </div>
+          <div class="flex justify-end mt-4">
+            <button @click="showLinkBoard = false" class="px-4 py-2 border rounded-lg text-sm cursor-pointer">{{ t("common.close") }}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Tasks -->
     <div v-if="activeTab === 'Tasks'">
       <div class="flex justify-between items-center mb-4">
@@ -93,6 +169,11 @@
       </form>
     </div>
 
+    <!-- Calls -->
+    <div v-if="activeTab === 'Calls'">
+      <CallsPanel :project-id="id" />
+    </div>
+
     <!-- Invoices -->
     <div v-if="activeTab === 'Invoices'">
       <div class="flex justify-between items-center mb-4">
@@ -119,18 +200,23 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import api from '../api'
 import { activeDateLocale } from '../i18n'
 import { useAuthStore } from '../stores/auth'
 import StatusBadge from '../components/StatusBadge.vue'
 import TaskCard from '../components/TaskCard.vue'
+import CallsPanel from '../components/CallsPanel.vue'
+import TaskProgressChart from '../components/TaskProgressChart.vue'
+import { formatMoney } from '../services/money'
+import { thumbnailDataUrl } from '../services/board'
 
 const { t } = useI18n()
 
 const route = useRoute()
+const router = useRouter()
 const id = route.params.id
 const auth = useAuthStore()
 
@@ -138,8 +224,14 @@ const project = ref(null)
 const tasks = ref([])
 const messages = ref([])
 const invoices = ref([])
-const activeTab = ref('Tasks')
-const tabs = ['Tasks', 'Messages', 'Invoices']
+const activeTab = ref('Overview')
+// 「請求書・イメージ・タスク・メッセージ」は案件ごとに揃える。通話も同じ部屋の道具。
+const tabs = ['Overview', 'Tasks', 'Boards', 'Messages', 'Calls', 'Invoices']
+const boards = ref([])
+const allBoards = ref([])
+const showLinkBoard = ref(false)
+const creatingBoard = ref(false)
+const boardError = ref('')
 const newMessage = ref('')
 const replyingTo = ref(null)
 const replyBody = ref('')
@@ -150,10 +242,6 @@ function tabClass(tab) {
     : 'pb-2 px-1 font-medium text-gray-500 hover:text-gray-700'
 }
 
-function formatMoney(amount) {
-  return '$' + Number(amount || 0).toLocaleString('en-CA', { minimumFractionDigits: 2 })
-}
-
 function formatDate(d) {
   if (!d) return ''
   return new Date(d).toLocaleString(activeDateLocale(), { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -162,6 +250,76 @@ function formatDate(d) {
 function initials(name) {
   if (!name) return '?'
   return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+}
+
+const summaryRows = computed(() => [
+  { key: 'summaryTasks', value: String(project.value?.task_stats?.total ?? tasks.value.length) },
+  { key: 'summaryBoards', value: String(boards.value.length) },
+  { key: 'summaryMessages', value: String(messages.value.length) },
+  { key: 'summaryInvoices', value: String(invoices.value.length) },
+  { key: 'summaryBilled', value: formatMoney(invoices.value.reduce((n, i) => n + Number(i.total || 0), 0)) },
+])
+
+// 自分がこの案件にリンクできるボード（まだこの案件のものではないもの）。
+const linkableBoards = computed(() => allBoards.value.filter((b) => String(b.project_id || '') !== String(id)))
+
+function thumbUrl(svg) {
+  return thumbnailDataUrl(svg)
+}
+
+async function loadBoards() {
+  try {
+    const res = await api.get('/boards', { params: { project_id: id } })
+    boards.value = res.data?.data || []
+  } catch {
+    boards.value = []
+  }
+}
+
+async function openLinkBoard() {
+  boardError.value = ''
+  showLinkBoard.value = true
+  try {
+    const res = await api.get('/boards')
+    allBoards.value = res.data?.data || []
+  } catch {
+    allBoards.value = []
+  }
+}
+
+async function linkBoard(board) {
+  try {
+    await api.put(`/boards/${board.id}`, { project_id: Number(id) })
+    showLinkBoard.value = false
+    await loadBoards()
+  } catch (e) {
+    boardError.value = e.response?.status === 403 ? t('projectDetail.linkBoardForbidden') : t('projectDetail.linkBoardFailed')
+    showLinkBoard.value = false
+  }
+}
+
+async function unlinkBoard(board) {
+  try {
+    await api.put(`/boards/${board.id}`, { project_id: null })
+    await loadBoards()
+  } catch (e) {
+    boardError.value = e.response?.status === 403 ? t('projectDetail.linkBoardForbidden') : t('projectDetail.linkBoardFailed')
+  }
+}
+
+async function createBoard() {
+  creatingBoard.value = true
+  boardError.value = ''
+  try {
+    const res = await api.post('/boards', {
+      title: project.value?.title ? t('projectDetail.boardNamed', { project: project.value.title }) : t('boards.untitled'),
+      project_id: Number(id),
+    })
+    router.push(`/boards/${res.data.data.id}`)
+  } catch {
+    boardError.value = t('boards.createFailed')
+    creatingBoard.value = false
+  }
 }
 
 onMounted(async () => {
@@ -175,6 +333,7 @@ onMounted(async () => {
   tasks.value = tRes.data?.data || tRes.data || []
   messages.value = mRes.data?.data || mRes.data || []
   invoices.value = iRes.data?.data || iRes.data || []
+  await loadBoards()
 })
 
 async function reloadMessages() {

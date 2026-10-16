@@ -1,10 +1,13 @@
 <template>
   <div class="max-w-6xl mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold text-gray-800">{{ t("projects.title") }}</h1>
+      <div>
+        <h1 class="font-serif text-2xl font-semibold text-ink">{{ t("projects.title") }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ auth.isClient ? t("projects.leadClient") : t("projects.leadDeveloper") }}</p>
+      </div>
       <div class="flex gap-2">
-        <button @click="showInviteModal = true"
-          class="border border-indigo-600 text-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-50">
+        <button v-if="auth.isDeveloper" @click="showInviteModal = true"
+          class="border border-indigo-600 text-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-50 cursor-pointer">
           {{ t("projects.inviteClient") }}
         </button>
         <button @click="showModal = true"
@@ -19,10 +22,14 @@
       <div class="space-y-2">
         <div v-for="p in group" :key="p.id"
           @click="$router.push(`/projects/${p.id}`)"
-          class="bg-white rounded-xl shadow px-5 py-4 flex justify-between items-center cursor-pointer hover:shadow-md transition">
-          <div>
+          class="bg-white rounded-xl shadow px-5 py-4 flex flex-wrap items-center gap-x-6 gap-y-3 cursor-pointer hover:shadow-md transition">
+          <div class="min-w-[12rem] flex-1">
             <div class="font-medium text-gray-800">{{ p.title || p.name }}</div>
-            <div class="text-sm text-gray-400">{{ t("projects.tasksCount", { count: p.tasks_count || 0 }) }}</div>
+            <div class="text-sm text-gray-400">{{ t("projects.tasksCount", { count: p.task_stats?.total || 0 }) }}</div>
+          </div>
+          <!-- 進捗（完了タスクの割合）。案件を開かなくても進み具合が分かるように。 -->
+          <div class="w-full sm:w-56 shrink-0" @click.stop>
+            <ProgressMeter :stats="p.task_stats || {}" />
           </div>
           <StatusBadge :status="p.status" />
         </div>
@@ -47,6 +54,8 @@
             <option value="">{{ t("projects.selectCompany") }}</option>
             <option v-for="c in companies" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
+          <textarea v-model="form.description" :placeholder="t('projects.descriptionOptional')" rows="3"
+            class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
           <input v-model="form.staging_url" :placeholder="t('projects.stagingUrlOptional')"
             class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           <input v-model="form.production_url" :placeholder="t('projects.productionUrlOptional')"
@@ -106,15 +115,18 @@
 import { ref, computed, onMounted } from "vue"
 import { useI18n } from "vue-i18n"
 import api from "../api"
+import { useAuthStore } from "../stores/auth"
 import StatusBadge from "../components/StatusBadge.vue"
+import ProgressMeter from "../components/ProgressMeter.vue"
 
 const { t } = useI18n()
+const auth = useAuthStore()
 
 const projects = ref([])
 const companies = ref([])
 const showModal = ref(false)
 const showInviteModal = ref(false)
-const form = ref({ title: "", company_id: "", staging_url: "", production_url: "" })
+const form = ref({ title: "", company_id: "", description: "", staging_url: "", production_url: "" })
 const projectError = ref("")
 const inviteCompanyId = ref("")
 const inviteEmail = ref("")
@@ -135,8 +147,11 @@ const grouped = computed(() => {
 
 async function loadCompanies() {
   try {
-    const res = await api.get("/companies")
+    // /companies は開発者専用。顧客も案件を作れるので、自分が作れる会社はこちらで引く。
+    const res = await api.get("/me/companies")
     companies.value = res.data?.data || res.data || []
+    // 所属が1社だけの顧客に会社を選ばせる意味は無いので、はじめから入れておく。
+    if (companies.value.length === 1) form.value.company_id = companies.value[0].id
   } catch (e) {
     console.error("Failed to load companies", e)
   }
@@ -161,9 +176,8 @@ async function createProject() {
   try {
     await api.post("/projects", form.value)
     showModal.value = false
-    const res = await api.get("/projects")
-    projects.value = res.data?.data || res.data || []
-    form.value = { title: "", company_id: "", staging_url: "", production_url: "" }
+    await loadProjects()
+    form.value = { title: "", company_id: companies.value.length === 1 ? companies.value[0].id : "", description: "", staging_url: "", production_url: "" }
   } catch (e) {
     projectError.value = e.response?.data?.message || t("projects.createFailed")
   }

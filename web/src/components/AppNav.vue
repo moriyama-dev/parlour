@@ -77,6 +77,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { activeDateLocale } from '../i18n'
 import LangSwitch from './LangSwitch.vue'
+import { formatMoney } from '../services/money'
 import api from '../api'
 
 const { t } = useI18n()
@@ -96,11 +97,16 @@ const navLinks = computed(() => {
     { to: '/companies', key: 'nav.companies' },
     { to: '/clients', key: 'nav.clients' },
     { to: '/projects', key: 'nav.projects' },
+    { to: '/boards', key: 'nav.boards' },
     { to: '/messages', key: 'nav.messages' },
+    { to: '/billing', key: 'nav.billing' },
   ]
   if (auth.isClient) return [
     { to: '/client/dashboard', key: 'nav.dashboard' },
+    { to: '/projects', key: 'nav.projects' },
+    { to: '/boards', key: 'nav.boards' },
     { to: '/messages', key: 'nav.messages' },
+    { to: '/billing', key: 'nav.billing' },
   ]
   return []
 })
@@ -149,9 +155,15 @@ function notifPath(n) {
     return '/projects/' + d.project_id
   }
   if (n.type === 'invoice_sent') {
-    return auth.isClient
-      ? '/client/invoices/' + d.invoice_id
-      : '/projects/' + d.project_id
+    // 請求書は「料金」ページ配下の1枚に集約した（開発者・顧客で同じ画面）。
+    return '/billing/invoices/' + d.invoice_id
+  }
+  if (n.type === 'call_scheduled') {
+    // 予約通話は案件ページの「通話」タブから入る。
+    return '/projects/' + d.project_id
+  }
+  if (n.type.startsWith('subscription_')) {
+    return '/billing?tab=Subscriptions'
   }
   return null
 }
@@ -174,6 +186,18 @@ function notifMessage(n) {
       : t('notif.taskRejected', { title: d.task_title })
   }
   if (n.type === 'invoice_sent') return t('notif.invoiceSent', { number: d.invoice_number })
+  if (n.type === 'call_scheduled') {
+    return t('notif.callScheduled', { host: d.host_name, at: formatDate(d.scheduled_at) })
+  }
+  if (n.type === 'subscription_created') return t('notif.subscriptionCreated', { name: d.subscription_name })
+  if (n.type === 'subscription_started') return t('notif.subscriptionStarted', { name: d.subscription_name })
+  if (n.type === 'subscription_canceled') return t('notif.subscriptionCanceled', { name: d.subscription_name })
+  if (n.type === 'subscription_payment_failed') {
+    return t('notif.subscriptionPaymentFailed', {
+      name: d.subscription_name,
+      amount: formatMoney(d.amount, { currency: d.currency || 'CAD' }),
+    })
+  }
   return d.message || d.body || n.type
 }
 

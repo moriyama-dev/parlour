@@ -172,3 +172,34 @@
   padding: 6px 12px;
   letter-spacing: 0.01em;
 }
+
+/* 通話画面の操作ボタン。数が多く同じ見た目なので、ここに一度だけ書く。 */
+.call-ctl {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  font-size: 1.125rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.call-ctl-on {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+.call-ctl-on:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.call-ctl-off {
+  background: rgba(220, 38, 38, 0.85);
+  color: #ffffff;
+}
+.call-ctl-off:hover {
+  background: #dc2626;
+}
+.call-ctl-active {
+  background: #ffffff;
+  color: var(--color-ink);
+}

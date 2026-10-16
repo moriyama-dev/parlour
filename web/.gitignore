@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# MediaPipe の WASM。scripts/sync-mediapipe.mjs が node_modules から複製するので
+# 出所は package.json（@mediapipe/tasks-vision）だけ。合計 23MB あるので追跡しない。
+public/mediapipe/
