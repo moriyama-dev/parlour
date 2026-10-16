@@ -1,5 +1,6 @@
 import { defineStore } from "pinia"
 import api from "../api"
+import { forgetThisDevice } from "../services/push"
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
@@ -20,6 +21,8 @@ export const useAuthStore = defineStore("auth", {
       if (!this.user) await this.fetchUser()
     },
     async logout() {
+      // トークンを捨てる前に、この端末の通知の購読を外す（共用端末に前の人の通知が届かないように）。
+      await forgetThisDevice()
       try { await api.post("/auth/logout") } catch {}
       this.token = null
       this.user = null

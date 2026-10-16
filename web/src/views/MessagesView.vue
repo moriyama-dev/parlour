@@ -123,11 +123,13 @@
 
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import api from '../api'
 import { activeDateLocale } from '../i18n'
 
 const { t } = useI18n()
+const route = useRoute()
 const projects = ref([])
 const selected = ref(null)
 const messages = ref([])
@@ -150,6 +152,9 @@ function initials(name) {
 onMounted(async () => {
   const res = await api.get('/projects')
   projects.value = res.data?.data || res.data || []
+  // 通知から来たとき（/messages?project=ID）はその案件のスレッドを開いておく。
+  const fromLink = projects.value.find(p => String(p.id) === String(route.query.project))
+  if (fromLink) await selectProject(fromLink)
 })
 
 async function selectProject(p) {

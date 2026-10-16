@@ -17,6 +17,7 @@ class User extends Authenticatable
         'password',
         'role',
         'avatar_path',
+        'notification_preferences',
     ];
 
     protected $hidden = [
@@ -29,7 +30,29 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'notification_preferences' => 'array',
         ];
+    }
+
+    /**
+     * 端末への通知（Web Push）を分類ごとにオン・オフできる。
+     * ベルのお知らせ一覧はこの設定に関係なく残る（記録なので）。
+     */
+    public const NOTIFICATION_CATEGORIES = ['message', 'task', 'invoice', 'call', 'subscription'];
+
+    /** 保存値に無い分類はオン。古い行（null）も全部オンになる。 */
+    public function notificationPreferences(): array
+    {
+        $saved = $this->notification_preferences ?? [];
+
+        return collect(self::NOTIFICATION_CATEGORIES)
+            ->mapWithKeys(fn ($c) => [$c => (bool) ($saved[$c] ?? true)])
+            ->all();
+    }
+
+    public function wantsPush(string $category): bool
+    {
+        return $this->notificationPreferences()[$category] ?? true;
     }
 
     // role enum values: developer, client

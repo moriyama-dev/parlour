@@ -6,13 +6,22 @@ use App\Events\MessageSent;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\MessageResource;
 use App\Models\Message;
+use App\Models\Notification;
 use App\Models\Project;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class MessageController extends Controller
 {
-    public function index(Project $project)
+    public function index(Request $request, Project $project)
     {
+        // スレッドを開いた＝読んだ。この案件のメッセージのお知らせは既読にする。
+        Notification::where('user_id', $request->user()->id)
+            ->where('type', 'message_received')
+            ->where('data->project_id', $project->id)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
         $messages = $project->messages()
             ->whereNull('parent_id')
             ->with(['user', 'replies.user', 'replies.replies.user'])
@@ -52,6 +61,23 @@ class MessageController extends Controller
         $message->load(['user', 'replies.user', 'replies.replies.user']);
 
         broadcast(new MessageSent($message))->toOthers();
+
+        // 案件に関わる自分以外の全員へ。スマホへの通知は Notification 作成時に飛ぶ。
+        $sender = $request->user();
+        $recipients = $project->members()->whereKeyNot($sender->id)->pluck('id');
+        foreach ($recipients as $userId) {
+            Notification::create([
+                'user_id' => $userId,
+                'type' => 'message_received',
+                'data' => [
+                    'message_id' => $message->id,
+                    'project_id' => $project->id,
+                    'project_title' => $project->title,
+                    'sender_name' => $sender->name,
+                    'excerpt' => Str::limit(preg_replace('/\s+/u', ' ', $message->body), 80),
+                ],
+            ]);
+        }
 
         return new MessageResource($message);
     }

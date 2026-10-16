@@ -69,6 +69,11 @@ messages the developer, all in one place instead of scattered email threads.
 - **Invoices** — line items, tax, and a status (draft → sent → paid).
 - **In-app notifications** — a feed with read / mark-all-read, for events like a task waiting on the
   client.
+- **Phone notifications (PWA + Web Push)** — add the portal to the Home Screen and get push
+  notifications for messages, task reviews, invoices, calls (incoming calls ring even with the app
+  closed) and subscriptions. Each category can be switched on or off per user. Sending works on
+  shared hosting (no queue worker or WebSocket server): pushes go out after the response is sent,
+  and only to known browser push services.
 - **Bilingual UI (Japanese / English)** — the language follows the browser, and can be switched by
   hand at any time.
 
@@ -216,8 +221,6 @@ These have groundwork in place (database tables, models, or dependencies) but ar
 so they are left out of the feature list above rather than half-claimed:
 
 - **File attachments** — tables and models exist; no upload UI or API yet.
-- **Web push notifications** — the `push_subscriptions` table and a web-push library are in place;
-  the service worker and subscription flow are not built. In-app notifications work today.
 - **Live message delivery** — messages are sent and listed over the API today; real-time delivery
   (WebSockets) is not connected on the frontend yet.
 - **Email** — invitations are shared as a link by hand; there is no email sending yet.

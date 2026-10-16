@@ -8,6 +8,7 @@ use Database\Seeders\DemoSeeder;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use Minishlink\WebPush\VAPID;
 use Stripe\Exception\ApiErrorException;
 
 Artisan::command('inspire', function () {
@@ -62,3 +63,12 @@ Artisan::command('subscriptions:sync', function (StripeBilling $stripe, Subscrip
 })->purpose('Re-sync subscriptions and their invoices from Stripe');
 
 Schedule::command('subscriptions:sync')->dailyAt('05:00')->name('subscriptions-sync')->withoutOverlapping();
+
+// Web Push の VAPID 鍵を作る。出力された3行を、設置先の .env（env.production / env.demo）に貼る。
+// 鍵は本番とデモで別にすること。作り直すと既存の購読はすべて届かなくなる。
+Artisan::command('push:vapid', function () {
+    $keys = VAPID::createVapidKeys();
+    $this->line('VAPID_PUBLIC_KEY='.$keys['publicKey']);
+    $this->line('VAPID_PRIVATE_KEY='.$keys['privateKey']);
+    $this->line('VAPID_SUBJECT='.config('app.url'));
+})->purpose('Generate a VAPID key pair for Web Push');

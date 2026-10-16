@@ -90,6 +90,10 @@ class AppServiceProvider extends ServiceProvider
         // 支払い登録・カード管理画面への遷移。Stripe 側にセッションを作る呼び出しなので抑える。
         RateLimiter::for('billing-redirect', fn (Request $request) => Limit::perMinute(10)
             ->by('billing:'.$this->actorKey($request)));
+
+        // 通知の購読・設定・テスト送信。テスト送信は外部の配信サーバーを叩くので抑える。
+        RateLimiter::for('push', fn (Request $request) => Limit::perMinute(20)
+            ->by('push:'.$this->actorKey($request)));
     }
 
     /**

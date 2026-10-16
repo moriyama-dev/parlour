@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ProjectController;
+use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Controllers\Api\StripeWebhookController;
 use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\TaskApprovalController;
@@ -209,6 +210,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/boards/{board}', [BoardController::class, 'update']);
     Route::delete('/boards/{board}', [BoardController::class, 'destroy']);
     Route::post('/boards/{board}/duplicate', [BoardController::class, 'duplicate']);
+
+    /*
+     * 端末への通知（Web Push）。購読は端末ごと、受け取る分類のオン・オフは利用者ごと。
+     * 書き込みは自分の行にしか届かない（コントローラが $request->user() 起点で引く）。
+     */
+    Route::get('/push', [PushSubscriptionController::class, 'show']);
+    Route::middleware('throttle:push')->group(function () {
+        Route::post('/push/subscriptions', [PushSubscriptionController::class, 'store']);
+        Route::delete('/push/subscriptions', [PushSubscriptionController::class, 'destroy']);
+        Route::put('/push/preferences', [PushSubscriptionController::class, 'updatePreferences']);
+        Route::post('/push/test', [PushSubscriptionController::class, 'test']);
+    });
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);

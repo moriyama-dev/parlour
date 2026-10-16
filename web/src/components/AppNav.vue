@@ -44,6 +44,10 @@
               <div class="text-xs text-gray-400 mt-1">{{ formatDate(n.created_at) }}</div>
             </div>
           </div>
+          <router-link to="/settings/notifications" @click="showNotifications = false"
+            class="block px-4 py-2.5 border-t text-xs text-center text-indigo-500 hover:bg-gray-50">
+            📱 {{ t("notif.settingsLink") }}
+          </router-link>
         </div>
       </div>
 
@@ -71,8 +75,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { activeDateLocale } from '../i18n'
@@ -83,6 +87,7 @@ import api from '../api'
 const { t } = useI18n()
 const auth = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 const unreadCount = ref(0)
 const notifications = ref([])
 const showNotifications = ref(false)
@@ -146,6 +151,11 @@ async function markRead(n) {
 
 function notifPath(n) {
   const d = n.data || {}
+  if (n.type === 'message_received') {
+    return auth.isClient
+      ? '/client/projects/' + d.project_id + '/messages'
+      : '/messages?project=' + d.project_id
+  }
   if (n.type === 'task_pending_review') {
     return auth.isClient
       ? '/client/tasks/' + d.task_id
@@ -178,6 +188,9 @@ async function markAllRead() {
 
 function notifMessage(n) {
   const d = n.data || {}
+  if (n.type === 'message_received') {
+    return t('notif.messageReceived', { name: d.sender_name, project: d.project_title, excerpt: d.excerpt })
+  }
   if (n.type === 'task_pending_review') return t('notif.taskPendingReview', { title: d.task_title })
   if (n.type === 'task_approved') return t('notif.taskApproved', { title: d.task_title })
   if (n.type === 'task_rejected') {
@@ -214,6 +227,18 @@ function handleClickOutside(e) {
     showMenu.value = false
   }
 }
+
+/*
+ * スマホの通知から開いたとき（URL に ?notif=ID が付く）。Service Worker からは
+ * API トークンが見えないので、既読はここで付ける。付けたら URL から外す。
+ */
+watch(() => route.query.notif, async (id) => {
+  if (!id || !auth.isAuthenticated) return
+  try { await api.patch(`/notifications/${id}/read`) } catch {}
+  const { notif, ...rest } = route.query
+  router.replace({ query: rest })
+  await loadNotifications()
+}, { immediate: true })
 
 onMounted(async () => {
   await loadNotifications()

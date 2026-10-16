@@ -1,9 +1,13 @@
 {
+  "id": "/",
   "name": "Takumi Web Services",
   "short_name": "Takumi",
+  "description": "Client portal — tasks, messages, invoices and calls",
+  "start_url": "/",
+  "scope": "/",
   "icons": [
-    { "src": "/favicon-192.png", "type": "image/png", "sizes": "192x192" },
-    { "src": "/favicon-512.png", "type": "image/png", "sizes": "512x512" }
+    { "src": "/favicon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "/favicon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" }
   ],
   "theme_color": "#20324a",
   "background_color": "#fbf7ef",

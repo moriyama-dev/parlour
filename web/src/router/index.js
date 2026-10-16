@@ -24,6 +24,8 @@ const routes = [
   { path: '/projects/:id/invoices/create', component: () => import('../views/InvoiceCreateView.vue'), meta: { auth: true, role: 'developer' } },
   // 通話画面は開発者と顧客で共通（アクセス可否は API 側の project.access が見る）
   { path: '/projects/:id/calls/:callId', component: () => import('../views/CallView.vue'), meta: { auth: true } },
+  // 端末への通知（Web Push）の設定。開発者・顧客で共通。
+  { path: '/settings/notifications', component: () => import('../views/NotificationSettingsView.vue'), meta: { auth: true } },
   { path: '/client/dashboard', component: () => import('../views/ClientDashboardView.vue'), meta: { auth: true, role: 'client' } },
   { path: '/client/tasks/:id', component: () => import('../views/ClientTaskView.vue'), meta: { auth: true, role: 'client' } },
   { path: '/client/projects/:id/messages', component: () => import('../views/ClientMessagesView.vue'), meta: { auth: true, role: 'client' } },
