@@ -8,16 +8,19 @@ use App\Http\Controllers\Api\CallInboxController;
 use App\Http\Controllers\Api\CallSignalController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\CompanyController;
+use App\Http\Controllers\Api\FeedbackController;
 use App\Http\Controllers\Api\InvitationController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\PushSubscriptionController;
+use App\Http\Controllers\Api\RequestQueueController;
 use App\Http\Controllers\Api\StripeWebhookController;
 use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\TaskApprovalController;
 use App\Http\Controllers\Api\TaskController;
+use App\Http\Controllers\Api\WorkRequestController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -221,6 +224,52 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/push/subscriptions', [PushSubscriptionController::class, 'destroy']);
         Route::put('/push/preferences', [PushSubscriptionController::class, 'updatePreferences']);
         Route::post('/push/test', [PushSubscriptionController::class, 'test']);
+    });
+
+    /*
+     * 依頼キュー（Conte Studios の VIP 方式）。顧客が依頼を積み、こちらが会社ごとの
+     * 同時進行数の枠内で上から1件ずつ消化する。案件の下ではなく会社の下にぶら下がる
+     * （案件は任意で紐づけるだけ）ので project.access の外に置き、会社の照合は
+     * コントローラが行う（Company::isVisibleTo）。他社の依頼は 404。
+     *
+     * 着手・納品・保留・作業時間・枠の設定は開発者だけ。承認と修正依頼は顧客だけ
+     * （コントローラ側で役割を見る。開発者が自分の納品を承認できないように）。
+     */
+    Route::get('/requests', [WorkRequestController::class, 'index']);
+    Route::get('/requests/{workRequest}', [WorkRequestController::class, 'show']);
+    Route::get('/request-queues/mine', [RequestQueueController::class, 'mine']);
+    Route::get('/request-queues/{company}', [RequestQueueController::class, 'show']);
+    Route::middleware('throttle:work-requests')->group(function () {
+        Route::post('/requests', [WorkRequestController::class, 'store']);
+        Route::put('/requests/{workRequest}', [WorkRequestController::class, 'update']);
+        Route::post('/requests/reorder', [WorkRequestController::class, 'reorder']);
+        Route::post('/requests/{workRequest}/comments', [WorkRequestController::class, 'comment']);
+        Route::post('/requests/{workRequest}/approve', [WorkRequestController::class, 'approve']);
+        Route::post('/requests/{workRequest}/revision', [WorkRequestController::class, 'revision']);
+        Route::post('/requests/{workRequest}/cancel', [WorkRequestController::class, 'cancel']);
+        Route::post('/request-queues/{company}/pause', [RequestQueueController::class, 'pause']);
+        Route::post('/request-queues/{company}/resume', [RequestQueueController::class, 'resume']);
+
+        Route::middleware('role:developer')->group(function () {
+            Route::post('/requests/{workRequest}/start', [WorkRequestController::class, 'start']);
+            Route::post('/requests/{workRequest}/deliver', [WorkRequestController::class, 'deliver']);
+            Route::post('/requests/{workRequest}/hold', [WorkRequestController::class, 'hold']);
+            Route::post('/requests/{workRequest}/time', [WorkRequestController::class, 'logTime']);
+            Route::put('/request-queues/{company}', [RequestQueueController::class, 'update']);
+            Route::post('/request-queues/{company}/next', [RequestQueueController::class, 'next']);
+        });
+    });
+    Route::get('/request-queues', [RequestQueueController::class, 'index'])->middleware('role:developer');
+
+    /*
+     * 推薦文と紹介。書くのは顧客（自社名義だけ）、読むのは開発者（顧客は自社のものだけ）。
+     */
+    Route::get('/testimonials', [FeedbackController::class, 'testimonials']);
+    Route::get('/referrals', [FeedbackController::class, 'referrals']);
+    Route::middleware('throttle:work-requests')->group(function () {
+        Route::post('/testimonials', [FeedbackController::class, 'storeTestimonial']);
+        Route::post('/referrals', [FeedbackController::class, 'storeReferral']);
+        Route::patch('/referrals/{referral}', [FeedbackController::class, 'updateReferral'])->middleware('role:developer');
     });
 
     // Notifications

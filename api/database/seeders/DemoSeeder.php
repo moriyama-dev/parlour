@@ -6,9 +6,12 @@ use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\Message;
 use App\Models\Project;
+use App\Models\Referral;
 use App\Models\Subscription;
 use App\Models\Task;
+use App\Models\Testimonial;
 use App\Models\User;
+use App\Models\WorkRequest;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -74,6 +77,12 @@ class DemoSeeder extends Seeder
                     'name' => 'Sakura Trading Co. (Demo)',
                     'website' => 'https://example.com',
                     'timezone' => 'America/Toronto',
+                    // 依頼キューの約束事（VIP Starter 相当：同時1件・3営業日・月4時間）
+                    'queue_active_limit' => 1,
+                    'queue_turnaround_hours' => 72,
+                    'queue_monthly_hours' => 4,
+                    'queue_paused_at' => null,
+                    'queue_pause_reason' => null,
                 ]
             );
 
@@ -90,6 +99,15 @@ class DemoSeeder extends Seeder
                     'status' => 'active',
                     'staging_url' => 'https://staging.example.com',
                     'production_url' => 'https://example.com',
+                    'brief' => [
+                        'business' => 'Importer of Japanese tableware and tea, selling to restaurants and retail shops across Ontario.',
+                        'goals' => 'Get more wholesale inquiries from restaurants, and let existing buyers reorder without phoning.',
+                        'audience' => 'Restaurant owners and buyers at gift and kitchenware shops.',
+                        'budget' => '5000_10000',
+                        'deadline' => now()->addMonths(2)->toDateString(),
+                        'references' => 'https://example.com/tableware-reference',
+                        'must_haves' => 'Bilingual (EN/JA), wholesale inquiry form, product catalogue that staff can update.',
+                    ],
                 ]
             );
 
@@ -181,6 +199,8 @@ class DemoSeeder extends Seeder
                 'status' => 'pending',
             ]);
 
+            $this->seedRequestQueue($company, $project, $developer, $client);
+
             Message::create([
                 'project_id' => $project->id,
                 'user_id' => $developer->id,
@@ -206,6 +226,11 @@ class DemoSeeder extends Seeder
                     'read_at' => null,
                 ],
                 [
+                    'type' => 'request_delivered',
+                    'data' => ['request_title' => 'Brighter hero image on the home page', 'request_id' => $this->deliveredRequestId, 'company_id' => $company->id, 'company_name' => $company->name, 'actor_name' => $developer->name],
+                    'read_at' => null,
+                ],
+                [
                     'type' => 'invoice_sent',
                     'data' => ['invoice_number' => $invoice->invoice_number, 'invoice_id' => $invoice->id, 'project_id' => $project->id],
                     'read_at' => null,
@@ -216,5 +241,144 @@ class DemoSeeder extends Seeder
         $this->command?->info('Demo data ready.');
         $this->command?->info('  Developer: '.self::DEV_EMAIL.' / '.self::PASSWORD);
         $this->command?->info('  Client:    '.self::CLIENT_EMAIL.' / '.self::PASSWORD);
+    }
+
+    private ?int $deliveredRequestId = null;
+
+    /**
+     * 依頼キュー（すべての状態が一度に見えるように）と、推薦文・紹介。
+     * 日時は「今」から逆算する。毎日 04:00 のリセットでも古びないように。
+     */
+    private function seedRequestQueue(Company $company, Project $project, User $developer, User $client): void
+    {
+        $company->workRequests()->delete(); // 履歴は外部キーの cascade で消える
+        Testimonial::where('company_id', $company->id)->delete();
+        Referral::where('company_id', $company->id)->delete();
+
+        $make = function (array $attrs, array $events) use ($company, $project, $client) {
+            $r = WorkRequest::create([
+                'company_id' => $company->id,
+                'project_id' => $project->id,
+                'created_by' => $client->id,
+                'category' => 'change',
+                'priority' => 'normal',
+                ...$attrs,
+            ]);
+            foreach ($events as [$type, $user, $body, $hoursAgo, $extra]) {
+                $e = $r->events()->create([
+                    'user_id' => $user?->id,
+                    'type' => $type,
+                    'body' => $body,
+                    'internal' => in_array($type, ['note', 'time'], true),
+                    'minutes' => $extra['minutes'] ?? null,
+                    'meta' => $extra['meta'] ?? null,
+                ]);
+                $e->forceFill(['created_at' => now()->subHours($hoursAgo), 'updated_at' => now()->subHours($hoursAgo)])->save();
+            }
+
+            return $r;
+        };
+
+        $delivered = $make([
+            'title' => 'Brighter hero image on the home page',
+            'description' => 'The hero photo feels a bit dark on phones. Could you brighten it, or try the alternate photo from the shoot?',
+            'category' => 'design',
+            'status' => 'client_review',
+            'video_url' => 'https://www.loom.com/share/demo-hero-walkthrough',
+            'started_at' => now()->subHours(30),
+            'delivered_at' => now()->subHours(2),
+            'due_at' => now()->addHours(40),
+            'assignee_id' => $developer->id,
+            'spent_minutes' => 50,
+            'delivery_note' => "Brightened the hero by about 15% and added a soft gradient so the headline stays readable.\nThe alternate photo is on staging too — switch with the toggle at the top right.",
+            'delivery_url' => 'https://staging.example.com',
+            'checklist' => [
+                ['text' => 'Colour-correct the original photo', 'done' => true],
+                ['text' => 'Prepare the alternate photo', 'done' => true],
+                ['text' => 'Check contrast on mobile', 'done' => true],
+            ],
+        ], [
+            ['created', $client, null, 34, []],
+            ['started', $developer, null, 30, []],
+            ['comment', $developer, 'Thanks for the video, that made it clear. Starting on this now.', 29, []],
+            ['time', $developer, 'Colour correction + gradient', 6, ['minutes' => 50]],
+            ['delivered', $developer, 'Brightened the hero and put the alternate photo on staging.', 2, ['meta' => ['url' => 'https://staging.example.com']]],
+        ]);
+        $this->deliveredRequestId = $delivered->id;
+
+        $make([
+            'title' => 'Add a wholesale inquiry form',
+            'description' => 'Restaurants keep emailing us for wholesale prices. A short form (company, contact, products of interest) would help.',
+            'category' => 'new_page',
+            'priority' => 'high',
+            'status' => 'in_progress',
+            'started_at' => now()->subHours(5),
+            'due_at' => now()->addHours(67),
+            'assignee_id' => $developer->id,
+            'estimate_hours' => 2.5,
+            'spent_minutes' => 40,
+            'revision_count' => 0,
+            'checklist' => [
+                ['text' => 'Form fields and validation', 'done' => true],
+                ['text' => 'Email notification to sales', 'done' => false],
+                ['text' => 'Japanese translation', 'done' => false],
+            ],
+        ], [
+            ['created', $client, null, 50, []],
+            ['started', $developer, null, 5, []],
+            ['note', $developer, 'Reuse the contact form component; sales address is in the brief.', 5, []],
+            ['time', $developer, 'Form + validation', 3, ['minutes' => 40]],
+        ]);
+
+        foreach ([
+            ['Update the holiday opening hours', 'Closed Dec 24 – Jan 2. Please update the footer and the contact page.', 'content', 'normal'],
+            ['Fix the broken link in the footer', 'The "Shipping policy" link goes to a 404.', 'bug', 'normal'],
+            ['Add the new matcha set to the catalogue', 'Photos and description are in the shared folder.', 'content', 'low'],
+        ] as $i => [$title, $desc, $category, $priority]) {
+            $make([
+                'title' => $title,
+                'description' => $desc,
+                'category' => $category,
+                'priority' => $priority,
+                'status' => 'queued',
+                'position' => $i + 1,
+            ], [['created', $client, null, 20 - $i, []]]);
+        }
+
+        $make([
+            'title' => 'Switch the menu PDF to the spring edition',
+            'category' => 'content',
+            'status' => 'done',
+            'started_at' => now()->subDays(9),
+            'delivered_at' => now()->subDays(8),
+            'completed_at' => now()->subDays(8),
+            'rating' => 5,
+            'spent_minutes' => 20,
+            'delivery_note' => 'Replaced the PDF and updated the download button label.',
+        ], [
+            ['created', $client, null, 24 * 10, []],
+            ['started', $developer, null, 24 * 9, []],
+            ['delivered', $developer, 'Replaced the PDF.', 24 * 8 + 3, []],
+            ['approved', $client, 'Perfect, thank you!', 24 * 8, ['meta' => ['rating' => 5]]],
+        ]);
+
+        Testimonial::create([
+            'company_id' => $company->id,
+            'project_id' => $project->id,
+            'user_id' => $client->id,
+            'rating' => 5,
+            'body' => 'We send small changes whenever we think of them and they just get done, in order, with a note on what changed. No more chasing emails.',
+            'display_name' => 'Aoi Tanaka, Sakura Trading (Demo)',
+            'allow_publish' => true,
+        ]);
+        Referral::create([
+            'company_id' => $company->id,
+            'user_id' => $client->id,
+            'referred_name' => 'Maple Tea House (Demo)',
+            'contact_name' => 'Ken Sato',
+            'contact_email' => 'ken@example.com',
+            'note' => 'A café we supply. Their site is very old.',
+            'status' => 'contacted',
+        ]);
     }
 }

@@ -37,6 +37,41 @@
           </div>
         </dl>
       </section>
+
+      <!-- ヒアリング（案件作成時に顧客が書いたもの） -->
+      <section v-if="briefRows.length" class="bg-white rounded-2xl shadow p-6 lg:col-span-2">
+        <h2 class="font-serif text-lg font-semibold text-ink mb-4">{{ t("projects.brief.title") }}</h2>
+        <dl class="grid gap-x-8 gap-y-3 sm:grid-cols-2 text-sm">
+          <div v-for="row in briefRows" :key="row.key">
+            <dt class="text-xs text-gray-500">{{ t(`projects.brief.${row.key}`) }}</dt>
+            <dd class="text-ink whitespace-pre-wrap break-words mt-0.5">{{ row.value }}</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+
+    <!-- 依頼：この案件に紐づいた依頼キューの依頼 -->
+    <div v-if="activeTab === 'Requests'">
+      <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
+        <h2 class="font-semibold text-gray-700">{{ t("projectDetail.tabRequests") }}</h2>
+        <div class="flex gap-2">
+          <router-link v-if="project" :to="`/requests?company=${project.company_id}`"
+            class="border border-indigo-600 text-indigo-600 px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-50">{{ t("projectDetail.openQueue") }}</router-link>
+          <router-link v-if="project" :to="`/requests?company=${project.company_id}&project=${id}&new=1`"
+            class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-700">+ {{ t("projectDetail.newRequest") }}</router-link>
+        </div>
+      </div>
+      <p class="text-sm text-gray-500 mb-4">{{ t("projectDetail.requestsLead") }}</p>
+      <div v-if="requests.length === 0" class="text-gray-400 text-sm py-8 text-center">{{ t("projectDetail.noRequests") }}</div>
+      <div class="space-y-2">
+        <router-link v-for="r in requests" :key="r.id" :to="`/requests/${r.id}`"
+          class="bg-white rounded-xl shadow px-5 py-3 flex flex-wrap items-center gap-2 hover:shadow-md transition">
+          <span class="text-xs text-gray-400 tabular-nums">#{{ r.id }}</span>
+          <span class="font-medium text-gray-800">{{ r.title }}</span>
+          <RequestBadge kind="category" :value="r.category" />
+          <span class="ml-auto"><RequestBadge kind="status" :value="r.status" /></span>
+        </router-link>
+      </div>
     </div>
 
     <!-- イメージ：この案件にリンクされたホワイトボード -->
@@ -210,6 +245,7 @@ import StatusBadge from '../components/StatusBadge.vue'
 import TaskCard from '../components/TaskCard.vue'
 import CallsPanel from '../components/CallsPanel.vue'
 import TaskProgressChart from '../components/TaskProgressChart.vue'
+import RequestBadge from '../components/RequestBadge.vue'
 import { formatMoney } from '../services/money'
 import { thumbnailDataUrl } from '../services/board'
 
@@ -226,7 +262,8 @@ const messages = ref([])
 const invoices = ref([])
 const activeTab = ref('Overview')
 // 「請求書・イメージ・タスク・メッセージ」は案件ごとに揃える。通話も同じ部屋の道具。
-const tabs = ['Overview', 'Tasks', 'Boards', 'Messages', 'Calls', 'Invoices']
+const tabs = ['Overview', 'Tasks', 'Requests', 'Boards', 'Messages', 'Calls', 'Invoices']
+const requests = ref([])
 const boards = ref([])
 const allBoards = ref([])
 const showLinkBoard = ref(false)
@@ -259,6 +296,19 @@ const summaryRows = computed(() => [
   { key: 'summaryInvoices', value: String(invoices.value.length) },
   { key: 'summaryBilled', value: formatMoney(invoices.value.reduce((n, i) => n + Number(i.total || 0), 0)) },
 ])
+
+// ヒアリングは記入された項目だけ出す。予算は帯の名前に、期日は日付表記に。
+const briefRows = computed(() => {
+  const b = project.value?.brief || {}
+  return ['business', 'goals', 'audience', 'budget', 'deadline', 'references', 'competitors', 'must_haves']
+    .filter((k) => b[k])
+    .map((k) => ({
+      key: k,
+      value: k === 'budget' ? t(`projects.brief.budgetBands.${b[k]}`)
+        : k === 'deadline' ? new Date(b[k] + 'T12:00:00').toLocaleDateString(activeDateLocale())
+        : b[k],
+    }))
+})
 
 // 自分がこの案件にリンクできるボード（まだこの案件のものではないもの）。
 const linkableBoards = computed(() => allBoards.value.filter((b) => String(b.project_id || '') !== String(id)))
@@ -334,6 +384,9 @@ onMounted(async () => {
   messages.value = mRes.data?.data || mRes.data || []
   invoices.value = iRes.data?.data || iRes.data || []
   await loadBoards()
+  api.get('/requests', { params: { project_id: id } })
+    .then((res) => { requests.value = res.data?.data || [] })
+    .catch(() => { requests.value = [] })
 })
 
 async function reloadMessages() {

@@ -38,7 +38,7 @@ class User extends Authenticatable
      * 端末への通知（Web Push）を分類ごとにオン・オフできる。
      * ベルのお知らせ一覧はこの設定に関係なく残る（記録なので）。
      */
-    public const NOTIFICATION_CATEGORIES = ['message', 'task', 'invoice', 'call', 'subscription'];
+    public const NOTIFICATION_CATEGORIES = ['message', 'task', 'request', 'invoice', 'call', 'subscription'];
 
     /** 保存値に無い分類はオン。古い行（null）も全部オンになる。 */
     public function notificationPreferences(): array

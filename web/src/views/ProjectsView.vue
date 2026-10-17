@@ -43,8 +43,8 @@
     </div>
 
     <!-- New Project Modal -->
-    <div v-if="showModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+    <div v-if="showModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg max-h-[92vh] overflow-y-auto">
         <h2 class="text-lg font-semibold mb-4">{{ t("projects.newProject") }}</h2>
         <form @submit.prevent="createProject" class="space-y-3">
           <input v-model="form.title" :placeholder="t('projects.name')" required
@@ -60,6 +60,29 @@
             class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           <input v-model="form.production_url" :placeholder="t('projects.productionUrlOptional')"
             class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+
+          <!-- ヒアリング（最初の打ち合わせで聞くことを先に書いてもらう） -->
+          <details class="border border-mist rounded-lg px-3 py-2" :open="auth.isClient">
+            <summary class="text-sm font-medium text-gray-700 cursor-pointer">{{ t("projects.brief.heading") }}</summary>
+            <p class="text-xs text-gray-400 mt-1 mb-3">{{ t("projects.brief.lead") }}</p>
+            <div class="space-y-3">
+              <label v-for="f in BRIEF_TEXT_FIELDS" :key="f" class="block text-xs text-gray-500">{{ t(`projects.brief.${f}`) }}
+                <textarea v-model="form.brief[f]" rows="2" maxlength="5000"
+                  class="mt-1 w-full border rounded-lg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+              </label>
+              <div class="grid grid-cols-2 gap-3">
+                <label class="block text-xs text-gray-500">{{ t("projects.brief.budget") }}
+                  <select v-model="form.brief.budget" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm text-ink">
+                    <option value="">{{ t("projects.brief.selectBudget") }}</option>
+                    <option v-for="b in BUDGET_BANDS" :key="b" :value="b">{{ t(`projects.brief.budgetBands.${b}`) }}</option>
+                  </select>
+                </label>
+                <label class="block text-xs text-gray-500">{{ t("projects.brief.deadline") }}
+                  <input v-model="form.brief.deadline" type="date" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm text-ink" />
+                </label>
+              </div>
+            </div>
+          </details>
           <p v-if="projectError" class="text-red-500 text-sm">{{ projectError }}</p>
           <div class="flex gap-3 justify-end pt-2">
             <button type="button" @click="showModal = false" class="px-4 py-2 border rounded-lg">{{ t("common.cancel") }}</button>
@@ -126,7 +149,11 @@ const projects = ref([])
 const companies = ref([])
 const showModal = ref(false)
 const showInviteModal = ref(false)
-const form = ref({ title: "", company_id: "", description: "", staging_url: "", production_url: "" })
+// ヒアリング項目。API の Project::BRIEF_FIELDS / BUDGET_BANDS と揃える。
+const BRIEF_TEXT_FIELDS = ["business", "goals", "audience", "references", "competitors", "must_haves"]
+const BUDGET_BANDS = ["under_2500", "2500_5000", "5000_10000", "10000_plus", "undecided"]
+const blankBrief = () => ({ business: "", goals: "", audience: "", budget: "", deadline: "", references: "", competitors: "", must_haves: "" })
+const form = ref({ title: "", company_id: "", description: "", staging_url: "", production_url: "", brief: blankBrief() })
 const projectError = ref("")
 const inviteCompanyId = ref("")
 const inviteEmail = ref("")
@@ -174,10 +201,14 @@ onMounted(() => {
 async function createProject() {
   projectError.value = ""
   try {
-    await api.post("/projects", form.value)
+    // 空欄は送らない（brief が空なら null、url の空文字は検証で落ちる）。
+    const brief = Object.fromEntries(Object.entries(form.value.brief).filter(([, v]) => v))
+    const payload = Object.fromEntries(Object.entries({ ...form.value, brief: Object.keys(brief).length ? brief : null })
+      .filter(([, v]) => v !== ""))
+    await api.post("/projects", payload)
     showModal.value = false
     await loadProjects()
-    form.value = { title: "", company_id: companies.value.length === 1 ? companies.value[0].id : "", description: "", staging_url: "", production_url: "" }
+    form.value = { title: "", company_id: companies.value.length === 1 ? companies.value[0].id : "", description: "", staging_url: "", production_url: "", brief: blankBrief() }
   } catch (e) {
     projectError.value = e.response?.data?.message || t("projects.createFailed")
   }

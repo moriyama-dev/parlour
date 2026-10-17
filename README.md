@@ -60,17 +60,31 @@ messages the developer, all in one place instead of scattered email threads.
   requires a reason.
 - **Append-only approval log** — every decision is written as a new immutable row. A later decision
   never overwrites an earlier one, so months later there is a clear record of what was signed off.
+- **Request queue (unlimited-requests model)** — the client adds as many requests as they like
+  (change, bug, new page, content, design, SEO), with an optional Loom-style screen-recording link,
+  and reorders the queue themselves. The studio works from the top within a per-client **active
+  limit** (e.g. one at a time), and the turnaround clock counts **weekdays only** in the client's time
+  zone. Each request goes queued → in progress → client review → done, and a client can request
+  **unlimited revisions**. Every request has a single timeline of comments and status changes;
+  the studio can add internal notes and time logs that never reach the client's API, and track hours
+  against an optional monthly allowance. A client can **pause** the queue instead of cancelling.
+- **Project brief** — when a client opens a new project, an optional discovery questionnaire
+  (business, goals, audience, budget band, deadline, references) is filled in up front.
+- **Testimonials & referrals** — after approving a delivery, the client is invited to leave a rating
+  and a testimonial (with explicit permission to publish) and to refer another business; the studio
+  tracks each referral from new → contacted → won / lost.
 - **Messages** — per-project threads (with replies) between developer and client.
 - **Whiteboards ("Image" menu)** — a Miro-style infinite canvas built in-house: a dashboard of
   boards (templates, starring, grid / list) and an editor with sticky notes, shapes, text, frames,
   connectors, freehand pen, comments and image upload, with undo / redo and autosave. A board is
   private to its creator until it is shared with a project, at which point that project's clients
   can open and edit it too.
-- **Invoices** — line items, tax, and a status (draft → sent → paid).
+- **Invoices** — line items, tax, and a status (draft → sent → paid). A fixed-price job can be
+  issued as two invoices in one step: a 50% deposit and a 50% balance.
 - **In-app notifications** — a feed with read / mark-all-read, for events like a task waiting on the
   client.
 - **Phone notifications (PWA + Web Push)** — add the portal to the Home Screen and get push
-  notifications for messages, task reviews, invoices, calls (incoming calls ring even with the app
+  notifications for messages, task reviews, requests, invoices, calls (incoming calls ring even with the app
   closed) and subscriptions. Each category can be switched on or off per user. Sending works on
   shared hosting (no queue worker or WebSocket server): pushes go out after the response is sent,
   and only to known browser push services.

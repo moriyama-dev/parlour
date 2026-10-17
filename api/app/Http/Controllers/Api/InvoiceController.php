@@ -32,7 +32,14 @@ class InvoiceController extends Controller
             'tax_amount' => ['nullable', 'numeric'],
             'total' => ['required', 'numeric'],
             'notes' => ['nullable', 'string'],
+            // 明細。作成画面は以前から送っていたが、受け取っておらず保存されていなかった。
+            'items' => ['nullable', 'array', 'max:100'],
+            'items.*.description' => ['required', 'string', 'max:500'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0'],
+            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
         ]);
+        $items = $validated['items'] ?? [];
+        unset($validated['items']);
 
         // Auto-generate invoice number INV-YYYY-NNN
         $year = now()->year;
@@ -45,6 +52,13 @@ class InvoiceController extends Controller
             'invoice_number' => $invoiceNumber,
             'status' => 'draft',
         ]);
+
+        foreach ($items as $item) {
+            $invoice->items()->create([
+                ...$item,
+                'amount' => round($item['quantity'] * $item['unit_price']),
+            ]);
+        }
 
         return new InvoiceResource($invoice->load('items'));
     }

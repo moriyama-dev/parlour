@@ -13,10 +13,32 @@ class Project extends Model
         'company_id',
         'title',
         'description',
+        'brief',
         'status',
         'staging_url',
         'production_url',
     ];
+
+    /**
+     * 案件のヒアリング項目（Conte の 20 分ディスカバリーで聞くこと）。
+     * 顧客が案件を作るときに書く。budget だけは BUDGET_BANDS から選ぶ。
+     */
+    public const BRIEF_FIELDS = ['business', 'goals', 'audience', 'budget', 'deadline', 'references', 'competitors', 'must_haves'];
+
+    /** 予算の帯（CAD）。最低帯を見せること自体が、話す前の足切りになる。 */
+    public const BUDGET_BANDS = ['under_2500', '2500_5000', '5000_10000', '10000_plus', 'undecided'];
+
+    protected function casts(): array
+    {
+        return [
+            'brief' => 'array',
+        ];
+    }
+
+    public function workRequests()
+    {
+        return $this->hasMany(WorkRequest::class);
+    }
 
     public function company()
     {

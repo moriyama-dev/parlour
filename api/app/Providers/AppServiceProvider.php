@@ -91,6 +91,10 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('billing-redirect', fn (Request $request) => Limit::perMinute(10)
             ->by('billing:'.$this->actorKey($request)));
 
+        // 依頼キュー・推薦文・紹介の書き込み。人の手で打つ操作なので、正常なら数件/分。
+        RateLimiter::for('work-requests', fn (Request $request) => Limit::perMinute(60)
+            ->by('requests:'.$this->actorKey($request)));
+
         // 通知の購読・設定・テスト送信。テスト送信は外部の配信サーバーを叩くので抑える。
         RateLimiter::for('push', fn (Request $request) => Limit::perMinute(20)
             ->by('push:'.$this->actorKey($request)));

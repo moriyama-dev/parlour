@@ -7,6 +7,7 @@ use App\Http\Resources\ProjectResource;
 use App\Models\Project;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ProjectController extends Controller
 {
@@ -51,6 +52,7 @@ class ProjectController extends Controller
             'status' => ['nullable', 'string'],
             'staging_url' => ['nullable', 'url'],
             'production_url' => ['nullable', 'url'],
+            ...self::briefRules(),
         ]);
 
         /*
@@ -70,6 +72,22 @@ class ProjectController extends Controller
         return new ProjectResource($project->load('company')->loadCount(self::taskCounts()));
     }
 
+    /**
+     * ヒアリング（brief）。決まったキーだけを受け取り、それ以外は捨てる
+     * （JSON をそのまま預かると、顧客が任意の大きさの中身を書き込める）。
+     */
+    private static function briefRules(): array
+    {
+        $rules = ['brief' => ['nullable', 'array:'.implode(',', Project::BRIEF_FIELDS)]];
+        foreach (Project::BRIEF_FIELDS as $field) {
+            $rules["brief.{$field}"] = ['nullable', 'string', 'max:5000'];
+        }
+        $rules['brief.budget'] = ['nullable', Rule::in(Project::BUDGET_BANDS)];
+        $rules['brief.deadline'] = ['nullable', 'date'];
+
+        return $rules;
+    }
+
     public function show(Project $project)
     {
         return new ProjectResource($project->load('company')->loadCount(self::taskCounts()));
@@ -86,6 +104,7 @@ class ProjectController extends Controller
             'description' => ['nullable', 'string'],
             'staging_url' => ['nullable', 'url'],
             'production_url' => ['nullable', 'url'],
+            ...self::briefRules(),
         ]);
 
         $project->update($validated);

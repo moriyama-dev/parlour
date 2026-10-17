@@ -101,17 +101,21 @@ const navLinks = computed(() => {
     { to: '/dashboard', key: 'nav.dashboard' },
     { to: '/companies', key: 'nav.companies' },
     { to: '/clients', key: 'nav.clients' },
+    { to: '/requests', key: 'nav.requests' },
     { to: '/projects', key: 'nav.projects' },
     { to: '/boards', key: 'nav.boards' },
     { to: '/messages', key: 'nav.messages' },
     { to: '/billing', key: 'nav.billing' },
+    { to: '/feedback', key: 'nav.feedback' },
   ]
   if (auth.isClient) return [
     { to: '/client/dashboard', key: 'nav.dashboard' },
+    { to: '/requests', key: 'nav.requests' },
     { to: '/projects', key: 'nav.projects' },
     { to: '/boards', key: 'nav.boards' },
     { to: '/messages', key: 'nav.messages' },
     { to: '/billing', key: 'nav.billing' },
+    { to: '/feedback', key: 'nav.feedback' },
   ]
   return []
 })
@@ -175,6 +179,10 @@ function notifPath(n) {
   if (n.type.startsWith('subscription_')) {
     return '/billing?tab=Subscriptions'
   }
+  // 依頼キュー。PushNotifier::url と揃える。
+  if (n.type.startsWith('request_')) return '/requests/' + d.request_id
+  if (n.type.startsWith('queue_')) return '/requests?company=' + d.company_id
+  if (n.type === 'testimonial_received' || n.type === 'referral_received') return '/feedback'
   return null
 }
 
@@ -211,6 +219,19 @@ function notifMessage(n) {
       amount: formatMoney(d.amount, { currency: d.currency || 'CAD' }),
     })
   }
+  const req = { title: d.request_title, company: d.company_name, name: d.actor_name, excerpt: d.excerpt, rating: d.rating }
+  if (n.type === 'request_created') return t('notif.requestCreated', req)
+  if (n.type === 'request_started') return t('notif.requestStarted', req)
+  if (n.type === 'request_delivered') return t('notif.requestDelivered', req)
+  if (n.type === 'request_revision') return t('notif.requestRevision', req)
+  if (n.type === 'request_approved') return d.rating ? t('notif.requestApprovedRating', req) : t('notif.requestApproved', req)
+  if (n.type === 'request_comment') return t('notif.requestComment', req)
+  if (n.type === 'request_on_hold') return t('notif.requestOnHold', req)
+  if (n.type === 'request_cancelled') return t('notif.requestCancelled', req)
+  if (n.type === 'queue_paused') return t('notif.queuePaused', req)
+  if (n.type === 'queue_resumed') return t('notif.queueResumed', req)
+  if (n.type === 'testimonial_received') return t('notif.testimonialReceived', req)
+  if (n.type === 'referral_received') return t('notif.referralReceived', { company: d.company_name, name: d.referred_name })
   return d.message || d.body || n.type
 }
 

@@ -24,6 +24,11 @@ const routes = [
   { path: '/projects/:id/invoices/create', component: () => import('../views/InvoiceCreateView.vue'), meta: { auth: true, role: 'developer' } },
   // 通話画面は開発者と顧客で共通（アクセス可否は API 側の project.access が見る）
   { path: '/projects/:id/calls/:callId', component: () => import('../views/CallView.vue'), meta: { auth: true } },
+  // 依頼キュー（Conte Studios の VIP 方式）。開発者・顧客で共通（見える範囲は API 側）。
+  { path: '/requests', component: () => import('../views/RequestsView.vue'), meta: { auth: true } },
+  { path: '/requests/:id', component: () => import('../views/RequestDetailView.vue'), meta: { auth: true } },
+  // 推薦文と紹介。顧客は書く、開発者は読む。
+  { path: '/feedback', component: () => import('../views/FeedbackView.vue'), meta: { auth: true } },
   // 端末への通知（Web Push）の設定。開発者・顧客で共通。
   { path: '/settings/notifications', component: () => import('../views/NotificationSettingsView.vue'), meta: { auth: true } },
   { path: '/client/dashboard', component: () => import('../views/ClientDashboardView.vue'), meta: { auth: true, role: 'client' } },

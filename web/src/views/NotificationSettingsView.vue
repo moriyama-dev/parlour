@@ -105,7 +105,7 @@ import { activeDateLocale } from "../i18n"
 import * as push from "../services/push"
 
 const { t } = useI18n()
-const categories = ["message", "task", "invoice", "call", "subscription"]
+const categories = ["message", "task", "request", "invoice", "call", "subscription"]
 
 const loading = ref(true)
 const busy = ref(false)

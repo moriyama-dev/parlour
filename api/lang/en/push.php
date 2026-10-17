@@ -21,6 +21,54 @@ return [
         'title' => 'Changes requested',
         'body' => '":task_title" :comment',
     ],
+    'request_created' => [
+        'title' => 'New request',
+        'body' => ':company_name: ":request_title"',
+    ],
+    'request_started' => [
+        'title' => 'Work has started',
+        'body' => '":request_title"',
+    ],
+    'request_delivered' => [
+        'title' => 'Ready for your review',
+        'body' => '":request_title" has been delivered',
+    ],
+    'request_revision' => [
+        'title' => 'Revision requested',
+        'body' => '":request_title" :excerpt',
+    ],
+    'request_approved' => [
+        'title' => 'Request completed',
+        'body' => '":request_title" was approved',
+    ],
+    'request_comment' => [
+        'title' => 'Comment from :actor_name',
+        'body' => '":request_title" :excerpt',
+    ],
+    'request_on_hold' => [
+        'title' => 'Request put on hold',
+        'body' => '":request_title" :excerpt',
+    ],
+    'request_cancelled' => [
+        'title' => 'Request cancelled',
+        'body' => '":request_title"',
+    ],
+    'queue_paused' => [
+        'title' => 'Request queue paused',
+        'body' => ':company_name :excerpt',
+    ],
+    'queue_resumed' => [
+        'title' => 'Request queue resumed',
+        'body' => ':company_name',
+    ],
+    'testimonial_received' => [
+        'title' => 'New testimonial (:rating★)',
+        'body' => ':company_name: :excerpt',
+    ],
+    'referral_received' => [
+        'title' => 'New referral',
+        'body' => ':referred_name, from :company_name',
+    ],
     'invoice_sent' => [
         'title' => 'New invoice',
         'body' => 'Invoice :invoice_number',
