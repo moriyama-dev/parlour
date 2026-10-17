@@ -89,10 +89,14 @@
         <div class="text-gray-700 text-sm mt-1">{{ msg.body }}</div>
       </div>
     </div>
+
+    <!-- スマホにアプリとして追加 -->
+    <InstallAppCard />
   </div>
 </template>
 
 <script setup>
+import InstallAppCard from "../components/InstallAppCard.vue"
 import { ref, onMounted } from "vue"
 import { useRouter } from "vue-router"
 import { useI18n } from "vue-i18n"

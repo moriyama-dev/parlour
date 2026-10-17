@@ -48,11 +48,14 @@
           </div>
         </div>
       </div>
+      <!-- スマホにアプリとして追加（ログイン前から案内する） -->
+      <InstallAppCard />
     </div>
   </div>
 </template>
 
 <script setup>
+import InstallAppCard from "../components/InstallAppCard.vue"
 import { ref } from "vue"
 import { useRouter } from "vue-router"
 import { useI18n } from "vue-i18n"

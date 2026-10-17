@@ -82,10 +82,14 @@
         <div class="text-xs text-gray-400 mt-1">{{ n.created_at }}</div>
       </div>
     </div>
+
+    <!-- スマホにアプリとして追加 -->
+    <InstallAppCard />
   </div>
 </template>
 
 <script setup>
+import InstallAppCard from "../components/InstallAppCard.vue"
 import { ref, onMounted } from "vue"
 import { useRouter } from "vue-router"
 import { useI18n } from "vue-i18n"
