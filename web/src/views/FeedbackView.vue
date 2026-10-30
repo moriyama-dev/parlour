@@ -262,8 +262,9 @@ onMounted(async () => {
       const [cRes, pRes] = await Promise.all([api.get('/me/companies'), api.get('/projects')])
       companies.value = cRes.data?.data || []
       projects.value = pRes.data?.data || []
-      tForm.value = blankT()
-      rForm.value = blankR()
+      // 読み込み中に打ち始めた文を消さないよう、会社だけ埋める
+      tForm.value.company_id ??= companies.value[0]?.id ?? null
+      rForm.value.company_id ??= companies.value[0]?.id ?? null
     }
     await loadLists()
   } catch {}
