@@ -32,7 +32,7 @@
           </label>
           <p v-if="tMessage" :class="['text-sm', tOk ? 'text-green-600' : 'text-red-500']">{{ tMessage }}</p>
           <div class="flex items-center gap-2">
-            <button type="submit" :disabled="busy" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-60 cursor-pointer">{{ tForm.id ? t('feedback.saveChanges') : t('feedback.submitTestimonial') }}</button>
+            <button type="submit" :disabled="busy || !tForm.company_id" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-60 cursor-pointer">{{ tForm.id ? t('feedback.saveChanges') : t('feedback.submitTestimonial') }}</button>
             <button v-if="tForm.id" type="button" @click="cancelTestimonialEdit" class="text-sm text-gray-500 hover:text-ink px-2 py-2 cursor-pointer">{{ t('feedback.cancelEdit') }}</button>
           </div>
         </form>
@@ -59,7 +59,7 @@
             class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
           <p v-if="rMessage" :class="['text-sm', rOk ? 'text-green-600' : 'text-red-500']">{{ rMessage }}</p>
           <div class="flex items-center gap-2">
-            <button type="submit" :disabled="busy" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-60 cursor-pointer">{{ rForm.id ? t('feedback.saveChanges') : t('feedback.submitReferral') }}</button>
+            <button type="submit" :disabled="busy || !rForm.company_id" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-60 cursor-pointer">{{ rForm.id ? t('feedback.saveChanges') : t('feedback.submitReferral') }}</button>
             <button v-if="rForm.id" type="button" @click="cancelReferralEdit" class="text-sm text-gray-500 hover:text-ink px-2 py-2 cursor-pointer">{{ t('feedback.cancelEdit') }}</button>
           </div>
         </form>
