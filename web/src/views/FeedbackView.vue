@@ -6,10 +6,10 @@
     <!-- 顧客：推薦文と紹介の2つのフォーム -->
     <div v-if="auth.isClient" class="grid gap-6 md:grid-cols-2 items-start mb-8">
       <section class="bg-white rounded-2xl shadow p-5">
-        <h2 class="font-semibold text-ink">{{ t('feedback.testimonialTitle') }}</h2>
+        <h2 class="font-semibold text-ink">{{ tForm.id ? t('feedback.editTestimonialTitle') : t('feedback.testimonialTitle') }}</h2>
         <p class="text-xs text-gray-500 mt-1 mb-4">{{ t('feedback.testimonialLead') }}</p>
-        <form @submit.prevent="sendTestimonial" class="space-y-3">
-          <select v-if="companies.length > 1" v-model="tForm.company_id" class="w-full border rounded-lg px-3 py-2 text-sm">
+        <form ref="tFormEl" @submit.prevent="sendTestimonial" class="space-y-3">
+          <select v-if="companies.length > 1 && !tForm.id" v-model="tForm.company_id" class="w-full border rounded-lg px-3 py-2 text-sm">
             <option v-for="c in companies" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
           <div>
@@ -31,15 +31,18 @@
             <input v-model="tForm.allow_publish" type="checkbox" class="accent-indigo-600" /> {{ t('feedback.allowPublish') }}
           </label>
           <p v-if="tMessage" :class="['text-sm', tOk ? 'text-green-600' : 'text-red-500']">{{ tMessage }}</p>
-          <button type="submit" :disabled="busy" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-60 cursor-pointer">{{ t('feedback.submitTestimonial') }}</button>
+          <div class="flex items-center gap-2">
+            <button type="submit" :disabled="busy" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-60 cursor-pointer">{{ tForm.id ? t('feedback.saveChanges') : t('feedback.submitTestimonial') }}</button>
+            <button v-if="tForm.id" type="button" @click="cancelTestimonialEdit" class="text-sm text-gray-500 hover:text-ink px-2 py-2 cursor-pointer">{{ t('feedback.cancelEdit') }}</button>
+          </div>
         </form>
       </section>
 
       <section class="bg-white rounded-2xl shadow p-5">
-        <h2 class="font-semibold text-ink">{{ t('feedback.referralTitle') }}</h2>
+        <h2 class="font-semibold text-ink">{{ rForm.id ? t('feedback.editReferralTitle') : t('feedback.referralTitle') }}</h2>
         <p class="text-xs text-gray-500 mt-1 mb-4">{{ t('feedback.referralLead') }}</p>
-        <form @submit.prevent="sendReferral" class="space-y-3">
-          <select v-if="companies.length > 1" v-model="rForm.company_id" class="w-full border rounded-lg px-3 py-2 text-sm">
+        <form ref="rFormEl" @submit.prevent="sendReferral" class="space-y-3">
+          <select v-if="companies.length > 1 && !rForm.id" v-model="rForm.company_id" class="w-full border rounded-lg px-3 py-2 text-sm">
             <option v-for="c in companies" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
           <input v-model="rForm.referred_name" required maxlength="255" :placeholder="t('feedback.referredName')"
@@ -55,7 +58,10 @@
           <textarea v-model="rForm.note" rows="2" maxlength="2000" :placeholder="t('feedback.note')"
             class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
           <p v-if="rMessage" :class="['text-sm', rOk ? 'text-green-600' : 'text-red-500']">{{ rMessage }}</p>
-          <button type="submit" :disabled="busy" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-60 cursor-pointer">{{ t('feedback.submitReferral') }}</button>
+          <div class="flex items-center gap-2">
+            <button type="submit" :disabled="busy" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-60 cursor-pointer">{{ rForm.id ? t('feedback.saveChanges') : t('feedback.submitReferral') }}</button>
+            <button v-if="rForm.id" type="button" @click="cancelReferralEdit" class="text-sm text-gray-500 hover:text-ink px-2 py-2 cursor-pointer">{{ t('feedback.cancelEdit') }}</button>
+          </div>
         </form>
       </section>
     </div>
@@ -75,7 +81,13 @@
               </span>
             </div>
             <p class="text-sm text-gray-700 whitespace-pre-wrap break-words mt-1">{{ x.body }}</p>
-            <div class="text-xs text-gray-400 mt-1">— {{ x.display_name || x.user?.name }} · {{ formatDate(x.created_at) }}</div>
+            <div class="flex items-center gap-3 text-xs text-gray-400 mt-1">
+              <span>— {{ x.display_name || x.user?.name }} · {{ formatDate(x.created_at) }}</span>
+              <template v-if="isMine(x)">
+                <button type="button" @click="editTestimonial(x)" class="ml-auto text-indigo-600 hover:underline cursor-pointer">{{ t('feedback.edit') }}</button>
+                <button type="button" @click="removeTestimonial(x)" class="text-red-500 hover:underline cursor-pointer">{{ t('feedback.delete') }}</button>
+              </template>
+            </div>
           </article>
         </div>
       </section>
@@ -99,7 +111,13 @@
               <span v-else class="ml-auto text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">{{ t(`feedback.referralStatus.${x.status}`) }}</span>
             </div>
             <p v-if="x.note" class="text-sm text-gray-600 whitespace-pre-wrap break-words mt-1">{{ x.note }}</p>
-            <div class="text-xs text-gray-400 mt-1">{{ x.company?.name }} · {{ x.user?.name }} · {{ formatDate(x.created_at) }}</div>
+            <div class="flex items-center gap-3 text-xs text-gray-400 mt-1">
+              <span>{{ x.company?.name }} · {{ x.user?.name }} · {{ formatDate(x.created_at) }}</span>
+              <template v-if="isMine(x) && x.status === 'new'">
+                <button type="button" @click="editReferral(x)" class="ml-auto text-indigo-600 hover:underline cursor-pointer">{{ t('feedback.edit') }}</button>
+                <button type="button" @click="removeReferral(x)" class="text-red-500 hover:underline cursor-pointer">{{ t('feedback.delete') }}</button>
+              </template>
+            </div>
           </article>
         </div>
       </section>
@@ -124,6 +142,8 @@ const projects = ref([])
 const testimonials = ref([])
 const referrals = ref([])
 const busy = ref(false)
+const tFormEl = ref(null)
+const rFormEl = ref(null)
 const tMessage = ref('')
 const tOk = ref(false)
 const rMessage = ref('')
@@ -133,6 +153,9 @@ const blankT = () => ({ company_id: companies.value[0]?.id ?? null, rating: 5, b
 const blankR = () => ({ company_id: companies.value[0]?.id ?? null, referred_name: '', contact_name: '', contact_email: '', contact_phone: '', note: '' })
 const tForm = ref(blankT())
 const rForm = ref(blankR())
+
+// 直す・消すは書いた本人だけ（サーバーも同じ照合をする）
+const isMine = (x) => auth.isClient && x.user?.id === auth.user?.id
 
 const companyProjects = computed(() => projects.value.filter((p) => Number(p.company_id) === Number(tForm.value.company_id)))
 
@@ -148,9 +171,11 @@ async function sendTestimonial() {
   busy.value = true
   tMessage.value = ''
   try {
-    await api.post('/testimonials', nullify(tForm.value))
+    const { id, company_id, ...fields } = nullify(tForm.value)
+    if (id) await api.patch(`/testimonials/${id}`, fields)
+    else await api.post('/testimonials', { company_id, ...fields })
     tOk.value = true
-    tMessage.value = t('feedback.testimonialThanks')
+    tMessage.value = id ? t('feedback.updated') : t('feedback.testimonialThanks')
     tForm.value = blankT()
     await loadLists()
   } catch {
@@ -165,9 +190,11 @@ async function sendReferral() {
   busy.value = true
   rMessage.value = ''
   try {
-    await api.post('/referrals', nullify(rForm.value))
+    const { id, company_id, ...fields } = nullify(rForm.value)
+    if (id) await api.patch(`/referrals/${id}`, fields)
+    else await api.post('/referrals', { company_id, ...fields })
     rOk.value = true
-    rMessage.value = t('feedback.referralThanks')
+    rMessage.value = id ? t('feedback.updated') : t('feedback.referralThanks')
     rForm.value = blankR()
     await loadLists()
   } catch {
@@ -178,9 +205,51 @@ async function sendReferral() {
   }
 }
 
+function editTestimonial(x) {
+  tForm.value = { id: x.id, company_id: x.company_id, rating: x.rating, body: x.body, project_id: x.project_id, display_name: x.display_name || '', allow_publish: x.allow_publish }
+  tMessage.value = ''
+  tFormEl.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+function cancelTestimonialEdit() {
+  tForm.value = blankT()
+  tMessage.value = ''
+}
+
+async function removeTestimonial(x) {
+  if (!window.confirm(t('feedback.deleteTestimonialConfirm'))) return
+  try {
+    await api.delete(`/testimonials/${x.id}`)
+    if (tForm.value.id === x.id) cancelTestimonialEdit()
+  } finally {
+    await loadLists()
+  }
+}
+
+function editReferral(x) {
+  rForm.value = { id: x.id, company_id: x.company_id, referred_name: x.referred_name, contact_name: x.contact_name || '', contact_email: x.contact_email || '', contact_phone: x.contact_phone || '', note: x.note || '' }
+  rMessage.value = ''
+  rFormEl.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+function cancelReferralEdit() {
+  rForm.value = blankR()
+  rMessage.value = ''
+}
+
+async function removeReferral(x) {
+  if (!window.confirm(t('feedback.deleteReferralConfirm'))) return
+  try {
+    await api.delete(`/referrals/${x.id}`)
+    if (rForm.value.id === x.id) cancelReferralEdit()
+  } finally {
+    await loadLists()
+  }
+}
+
 async function setStatus(referral, status) {
   try {
-    const res = await api.patch(`/referrals/${referral.id}`, { status })
+    const res = await api.patch(`/referrals/${referral.id}/status`, { status })
     Object.assign(referral, res.data.data)
   } catch {
     await loadLists()

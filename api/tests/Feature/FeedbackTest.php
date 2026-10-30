@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Company;
+use App\Models\Notification;
 use App\Models\Project;
+use App\Models\Referral;
+use App\Models\Testimonial;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -34,13 +37,77 @@ class FeedbackTest extends TestCase
 
         $this->actingAs($dev)->getJson('/testimonials')->assertOk()->assertJsonCount(1, 'data');
         $referral = $this->actingAs($dev)->getJson('/referrals')->assertOk()->json('data.0');
-        $this->actingAs($dev)->patchJson("/referrals/{$referral['id']}", ['status' => 'won'])->assertOk();
-        $this->actingAs($client)->patchJson("/referrals/{$referral['id']}", ['status' => 'lost'])->assertForbidden();
+        $this->actingAs($dev)->patchJson("/referrals/{$referral['id']}/status", ['status' => 'won'])->assertOk();
+        $this->actingAs($client)->patchJson("/referrals/{$referral['id']}/status", ['status' => 'lost'])->assertForbidden();
 
         // 開発者は推薦文を書けない（自作自演の防止）
         $this->actingAs($dev)->postJson('/testimonials', [
             'company_id' => $company->id, 'rating' => 5, 'body' => 'x',
         ])->assertForbidden();
+    }
+
+    public function test_only_the_author_can_edit_or_delete_a_testimonial(): void
+    {
+        $company = Company::factory()->create();
+        $author = User::factory()->client()->create();
+        $colleague = User::factory()->client()->create();
+        $author->companies()->attach($company->id);
+        $colleague->companies()->attach($company->id);
+        $dev = User::factory()->developer()->create();
+
+        $id = $this->actingAs($author)->postJson('/testimonials', [
+            'company_id' => $company->id, 'rating' => 5, 'body' => 'Great.', 'allow_publish' => true,
+        ])->json('data.id');
+
+        // 同じ会社の別の人も、開発者も、直せないし消せない
+        $this->actingAs($colleague)->patchJson("/testimonials/{$id}", ['body' => 'Hijacked'])->assertNotFound();
+        $this->actingAs($colleague)->deleteJson("/testimonials/{$id}")->assertNotFound();
+        $this->actingAs($dev)->patchJson("/testimonials/{$id}", ['rating' => 1])->assertNotFound();
+        $this->actingAs($dev)->deleteJson("/testimonials/{$id}")->assertNotFound();
+
+        $this->actingAs($author)->patchJson("/testimonials/{$id}", ['rating' => 4, 'body' => 'Great, and fast.', 'allow_publish' => false])
+            ->assertOk()->assertJsonPath('data.rating', 4)->assertJsonPath('data.allow_publish', false);
+        $this->assertTrue(Notification::where('user_id', $dev->id)->where('type', 'testimonial_updated')->exists());
+
+        // 他社の案件には付け替えられない
+        $foreign = Project::factory()->create();
+        $this->actingAs($author)->patchJson("/testimonials/{$id}", ['project_id' => $foreign->id])->assertStatus(422);
+
+        $this->actingAs($author)->deleteJson("/testimonials/{$id}")->assertNoContent();
+        $this->assertDatabaseMissing('testimonials', ['id' => $id]);
+        $this->assertTrue(Notification::where('user_id', $dev->id)->where('type', 'testimonial_deleted')->exists());
+    }
+
+    public function test_a_referral_can_be_changed_by_its_author_only_until_we_follow_up(): void
+    {
+        $company = Company::factory()->create();
+        $author = User::factory()->client()->create();
+        $colleague = User::factory()->client()->create();
+        $author->companies()->attach($company->id);
+        $colleague->companies()->attach($company->id);
+        $dev = User::factory()->developer()->create();
+
+        $id = $this->actingAs($author)->postJson('/referrals', [
+            'company_id' => $company->id, 'referred_name' => 'Kitchen Co.',
+        ])->json('data.id');
+
+        $this->actingAs($colleague)->patchJson("/referrals/{$id}", ['note' => 'x'])->assertNotFound();
+        $this->actingAs($dev)->deleteJson("/referrals/{$id}")->assertNotFound();
+
+        // 状態は本人の編集では変わらない（開発者の専用経路だけ）
+        $this->actingAs($author)->patchJson("/referrals/{$id}", ['contact_email' => 'owner@example.com', 'status' => 'won'])
+            ->assertOk()->assertJsonPath('data.contact_email', 'owner@example.com')->assertJsonPath('data.status', 'new');
+        $this->actingAs($author)->patchJson("/referrals/{$id}", ['contact_email' => 'not-an-email'])->assertStatus(422);
+
+        // こちらが連絡を始めたら、営業の記録として固定する
+        $this->actingAs($dev)->patchJson("/referrals/{$id}/status", ['status' => 'contacted'])->assertOk();
+        $this->actingAs($author)->patchJson("/referrals/{$id}", ['note' => 'late edit'])->assertStatus(409);
+        $this->actingAs($author)->deleteJson("/referrals/{$id}")->assertStatus(409);
+
+        $fresh = Referral::create(['company_id' => $company->id, 'user_id' => $author->id, 'referred_name' => 'B', 'status' => 'new']);
+        $this->actingAs($author)->deleteJson("/referrals/{$fresh->id}")->assertNoContent();
+        $this->assertDatabaseMissing('referrals', ['id' => $fresh->id]);
+        $this->assertSame(0, Testimonial::count());
     }
 
     public function test_the_project_brief_keeps_only_known_fields(): void

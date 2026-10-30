@@ -1,12 +1,8 @@
 <template>
   <div class="max-w-5xl mx-auto px-4 py-8">
-    <div class="flex flex-wrap justify-between items-start gap-3 mb-6">
-      <div>
-        <h1 class="font-serif text-2xl font-semibold text-ink">{{ t('requests.title') }}</h1>
-        <p class="text-sm text-gray-500 mt-1 max-w-2xl">{{ auth.isClient ? t('requests.leadClient') : t('requests.leadDeveloper') }}</p>
-      </div>
-      <button v-if="companyId" @click="openNew()"
-        class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 cursor-pointer">+ {{ t('requests.new') }}</button>
+    <div class="mb-6">
+      <h1 class="font-serif text-2xl font-semibold text-ink">{{ t('requests.title') }}</h1>
+      <p class="text-sm text-gray-500 mt-1 max-w-2xl">{{ auth.isClient ? t('requests.leadClient') : t('requests.leadDeveloper') }}</p>
     </div>
 
     <!-- 会社の切り替え（開発者は全社、顧客は所属が複数のときだけ） -->
@@ -20,6 +16,31 @@
         </span>
       </button>
     </div>
+
+    <!-- 依頼の追加。件名1行で送れる。説明・期限・動画などはフォームで（件名は引き継ぐ） -->
+    <section v-if="companyId" class="bg-white rounded-2xl shadow p-5 mb-6 border-l-4 border-gold">
+      <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+        <h2 class="font-semibold text-ink">+ {{ t('requests.quickTitle') }}</h2>
+        <span v-if="queues.length > 1" class="text-xs text-gray-500">{{ t('requests.quickTo', { company: queue?.company_name }) }}</span>
+      </div>
+      <form @submit.prevent="quickAdd" class="flex flex-col sm:flex-row gap-2">
+        <input v-model="quickText" required maxlength="255" :placeholder="t('requests.titlePlaceholder')" :aria-label="t('requests.titleLabel')"
+          class="flex-1 min-w-0 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        <button type="submit" :disabled="quickBusy || !quickText.trim()"
+          class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 cursor-pointer whitespace-nowrap">
+          {{ t('requests.submit') }}
+        </button>
+      </form>
+      <div class="flex flex-wrap items-center justify-between gap-2 mt-2">
+        <p class="text-xs text-gray-400">{{ t('requests.quickHint') }}</p>
+        <button type="button" @click="openNew()" class="text-sm text-indigo-600 hover:underline cursor-pointer">{{ t('requests.quickDetailed') }} →</button>
+      </div>
+      <p v-if="quickError" class="text-sm text-red-500 mt-2">{{ quickError }}</p>
+      <p v-if="quickAdded" class="text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2 mt-3">
+        {{ t('requests.quickAdded', { title: quickAdded.title }) }}
+        <router-link :to="`/requests/${quickAdded.id}`" class="underline ml-1">{{ t('requests.quickAddDetails') }}</router-link>
+      </p>
+    </section>
 
     <p v-if="loadError" class="text-sm text-red-500 mb-4">{{ loadError }}</p>
     <div v-if="!loaded" class="text-gray-400 text-sm py-10 text-center">{{ t('common.loading') }}</div>
@@ -134,7 +155,7 @@
       </template>
     </template>
 
-    <RequestFormModal v-if="showForm" :companies="companyOptions" :company-id="companyId" :project-id="prefillProject"
+    <RequestFormModal v-if="showForm" :companies="companyOptions" :company-id="companyId" :project-id="prefillProject" :preset-title="quickText"
       @close="showForm = false" @saved="onSaved" />
   </div>
 </template>

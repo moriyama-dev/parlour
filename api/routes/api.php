@@ -267,13 +267,18 @@ Route::middleware(['auth:sanctum', 'shadow'])->group(function () {
 
     /*
      * 推薦文と紹介。書くのは顧客（自社名義だけ）、読むのは開発者（顧客は自社のものだけ）。
+     * 直す・消すは書いた本人だけ（コントローラで照合）。紹介の状態を動かすのは開発者。
      */
     Route::get('/testimonials', [FeedbackController::class, 'testimonials']);
     Route::get('/referrals', [FeedbackController::class, 'referrals']);
     Route::middleware('throttle:work-requests')->group(function () {
         Route::post('/testimonials', [FeedbackController::class, 'storeTestimonial']);
+        Route::patch('/testimonials/{testimonial}', [FeedbackController::class, 'updateTestimonial']);
+        Route::delete('/testimonials/{testimonial}', [FeedbackController::class, 'destroyTestimonial']);
         Route::post('/referrals', [FeedbackController::class, 'storeReferral']);
-        Route::patch('/referrals/{referral}', [FeedbackController::class, 'updateReferral'])->middleware('role:developer');
+        Route::patch('/referrals/{referral}', [FeedbackController::class, 'updateReferral']);
+        Route::delete('/referrals/{referral}', [FeedbackController::class, 'destroyReferral']);
+        Route::patch('/referrals/{referral}/status', [FeedbackController::class, 'updateReferralStatus'])->middleware('role:developer');
     });
 
     // Notifications

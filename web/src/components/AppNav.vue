@@ -182,7 +182,7 @@ function notifPath(n) {
   // 依頼キュー。PushNotifier::url と揃える。
   if (n.type.startsWith('request_')) return '/requests/' + d.request_id
   if (n.type.startsWith('queue_')) return '/requests?company=' + d.company_id
-  if (n.type === 'testimonial_received' || n.type === 'referral_received') return '/feedback'
+  if (n.type.startsWith('testimonial_') || n.type === 'referral_received') return '/feedback'
   return null
 }
 
@@ -231,6 +231,8 @@ function notifMessage(n) {
   if (n.type === 'queue_paused') return t('notif.queuePaused', req)
   if (n.type === 'queue_resumed') return t('notif.queueResumed', req)
   if (n.type === 'testimonial_received') return t('notif.testimonialReceived', req)
+  if (n.type === 'testimonial_updated') return t('notif.testimonialUpdated', req)
+  if (n.type === 'testimonial_deleted') return t('notif.testimonialDeleted', req)
   if (n.type === 'referral_received') return t('notif.referralReceived', { company: d.company_name, name: d.referred_name })
   return d.message || d.body || n.type
 }

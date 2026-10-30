@@ -65,6 +65,14 @@ return [
         'title' => 'New testimonial (:rating★)',
         'body' => ':company_name: :excerpt',
     ],
+    'testimonial_updated' => [
+        'title' => 'Testimonial edited (:rating★)',
+        'body' => ':company_name: :excerpt',
+    ],
+    'testimonial_deleted' => [
+        'title' => 'Testimonial withdrawn',
+        'body' => ':company_name: :excerpt',
+    ],
     'referral_received' => [
         'title' => 'New referral',
         'body' => ':referred_name, from :company_name',

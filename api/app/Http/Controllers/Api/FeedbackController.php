@@ -20,6 +20,7 @@ use Illuminate\Validation\Rule;
  *
  * Conte は納品のたびに実名の推薦文を回収し、同じ系列・同業へ紹介で広げて 450 件まで来た。
  * ここはその受け口。書くのは顧客、読むのは開発者（顧客は自社が出したものだけ見える）。
+ * 直す・消すは書いた本人だけ（同じ会社の別の人でもできない）。
  */
 class FeedbackController extends Controller
 {
@@ -58,6 +59,51 @@ class FeedbackController extends Controller
         return new TestimonialResource($testimonial->load(['company', 'project', 'user']));
     }
 
+    /** 書いた本人が直す。公開に使っているかもしれないので、開発者に知らせる。 */
+    public function updateTestimonial(Request $request, Testimonial $testimonial)
+    {
+        $user = $request->user();
+        $this->assertAuthor($testimonial, $user);
+
+        $validated = $request->validate([
+            'project_id' => ['sometimes', 'nullable', 'integer', 'exists:projects,id'],
+            'rating' => ['sometimes', 'integer', 'between:1,5'],
+            'body' => ['sometimes', 'string', 'max:3000'],
+            'display_name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'allow_publish' => ['sometimes', 'boolean'],
+        ]);
+        if (! empty($validated['project_id'])) {
+            abort_unless(Project::whereKey($validated['project_id'])->where('company_id', $testimonial->company_id)->exists(), 422, 'The project does not belong to this company.');
+        }
+
+        $testimonial->update($validated);
+        $this->notifyDevelopers('testimonial_updated', $testimonial->company, $user, [
+            'rating' => $testimonial->rating,
+            'allow_publish' => $testimonial->allow_publish,
+            'excerpt' => Str::limit(preg_replace('/\s+/u', ' ', $testimonial->body), 80),
+        ]);
+
+        return new TestimonialResource($testimonial->load(['company', 'project', 'user']));
+    }
+
+    /** 削除は公開の取り下げも兼ねる。サイトに載せていたら外す必要があるので開発者に知らせる。 */
+    public function destroyTestimonial(Request $request, Testimonial $testimonial)
+    {
+        $user = $request->user();
+        $this->assertAuthor($testimonial, $user);
+
+        $company = $testimonial->company;
+        $data = [
+            'rating' => $testimonial->rating,
+            'was_publishable' => $testimonial->allow_publish,
+            'excerpt' => Str::limit(preg_replace('/\s+/u', ' ', $testimonial->body), 80),
+        ];
+        $testimonial->delete();
+        $this->notifyDevelopers('testimonial_deleted', $company, $user, $data);
+
+        return response()->noContent();
+    }
+
     public function referrals(Request $request)
     {
         return ReferralResource::collection(
@@ -86,8 +132,38 @@ class FeedbackController extends Controller
         return new ReferralResource($referral->load(['company', 'user']));
     }
 
-    /** 紹介の営業の進み具合（開発者）。 */
+    /**
+     * 書いた本人が直す。こちらが連絡を始めた後（status が new 以外）は営業の記録なので変えさせない。
+     */
     public function updateReferral(Request $request, Referral $referral)
+    {
+        $this->assertAuthor($referral, $request->user());
+        $this->assertReferralUntouched($referral);
+
+        $validated = $request->validate([
+            'referred_name' => ['sometimes', 'string', 'max:255'],
+            'contact_name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'contact_email' => ['sometimes', 'nullable', 'email', 'max:255'],
+            'contact_phone' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'note' => ['sometimes', 'nullable', 'string', 'max:2000'],
+        ]);
+        $referral->update($validated);
+
+        return new ReferralResource($referral->load(['company', 'user']));
+    }
+
+    public function destroyReferral(Request $request, Referral $referral)
+    {
+        $this->assertAuthor($referral, $request->user());
+        $this->assertReferralUntouched($referral);
+
+        $referral->delete();
+
+        return response()->noContent();
+    }
+
+    /** 紹介の営業の進み具合（開発者）。 */
+    public function updateReferralStatus(Request $request, Referral $referral)
     {
         $validated = $request->validate(['status' => ['required', Rule::in(Referral::STATUSES)]]);
         $referral->update($validated);
@@ -109,6 +185,17 @@ class FeedbackController extends Controller
         abort_unless($company !== null, 403, 'Forbidden');
 
         return $company;
+    }
+
+    /** 他人のものは存在も明かさない（自社の別の人のものも含めて 404）。 */
+    private function assertAuthor(Testimonial|Referral $item, User $user): void
+    {
+        abort_unless($user->role === 'client' && (int) $item->user_id === (int) $user->id, 404);
+    }
+
+    private function assertReferralUntouched(Referral $referral): void
+    {
+        abort_unless($referral->status === 'new', 409, 'This referral is already being followed up.');
     }
 
     private function notifyDevelopers(string $type, Company $company, User $actor, array $data): void

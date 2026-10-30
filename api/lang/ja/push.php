@@ -65,6 +65,14 @@ return [
         'title' => '推薦文が届きました（★:rating）',
         'body' => ':company_name：:excerpt',
     ],
+    'testimonial_updated' => [
+        'title' => '推薦文が直されました（★:rating）',
+        'body' => ':company_name：:excerpt',
+    ],
+    'testimonial_deleted' => [
+        'title' => '推薦文が取り下げられました',
+        'body' => ':company_name：:excerpt',
+    ],
     'referral_received' => [
         'title' => 'ご紹介が届きました',
         'body' => ':company_name から「:referred_name」',
