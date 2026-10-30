@@ -486,6 +486,9 @@ export default {
   demo: {
     banner: "デモ環境です — サンプルデータは定期的にリセットされます",
   },
+  shadow: {
+    readOnly: "閲覧専用（Shadow）のため、この操作はできません",
+  },
   login: {
     subtitle: "アカウントにログイン",
     email: "メールアドレス",
@@ -493,6 +496,7 @@ export default {
     signIn: "ログイン",
     signingIn: "ログイン中...",
     failed: "ログインに失敗しました",
+    locked: "ログインの失敗が続いたため、一時的にロックしています。しばらくしてからお試しください",
     demo: {
       heading: "見学の方へ",
       lead: "下記のデモアカウントでポータル内をご覧いただけます。",

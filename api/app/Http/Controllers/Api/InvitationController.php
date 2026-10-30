@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\Invitation;
 use App\Models\User;
+use App\Services\ShadowUsers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -102,7 +103,7 @@ class InvitationController extends Controller
 
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'email' => ['required', 'email', 'unique:users,email', app(ShadowUsers::class)->reservedEmailRule()],
             'password' => 'required|string|min:8|confirmed',
         ]);
 

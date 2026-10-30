@@ -4,6 +4,7 @@
     <AppNav v-if="auth.isAuthenticated && !route.meta.fullscreen" />
     <router-view />
     <IncomingCallToast v-if="auth.isAuthenticated" />
+    <ShadowReadOnlyToast />
   </div>
 </template>
 
@@ -14,6 +15,7 @@ import { useRoute } from "vue-router"
 import AppNav from "./components/AppNav.vue"
 import DemoBanner from "./components/DemoBanner.vue"
 import IncomingCallToast from "./components/IncomingCallToast.vue"
+import ShadowReadOnlyToast from "./components/ShadowReadOnlyToast.vue"
 import { useAuthStore } from "./stores/auth"
 import { sync as syncPush } from "./services/push"
 

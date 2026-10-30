@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ShadowUsers;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -18,6 +19,7 @@ class User extends Authenticatable
         'role',
         'avatar_path',
         'notification_preferences',
+        'shadow_of_id',
     ];
 
     protected $hidden = [
@@ -55,7 +57,37 @@ class User extends Authenticatable
         return $this->notificationPreferences()[$category] ?? true;
     }
 
-    // role enum values: developer, client
+    // role enum values: developer, client, shadow（CLAUDE.md §18）
+
+    protected static function booted(): void
+    {
+        // 登録された利用者には Shadow を自動で付ける（除外対象と機能無効時は何もしない）。
+        static::created(fn (User $user) => app(ShadowUsers::class)->ensureFor($user));
+
+        // Sanctum のトークンは多態関連で外部キーが無い。Shadow の行は外部キーで一緒に消えるが、
+        // トークンは残るので、ここで明示的に破棄する（削除済み顧客の画面を見続けられないように）。
+        static::deleting(function (User $user) {
+            $user->tokens()->delete();
+            $user->shadow?->tokens()->delete();
+        });
+    }
+
+    public function isShadow(): bool
+    {
+        return $this->role === 'shadow';
+    }
+
+    /** Shadow から見た元ユーザー。 */
+    public function original()
+    {
+        return $this->belongsTo(User::class, 'shadow_of_id');
+    }
+
+    /** 元ユーザーから見た Shadow。 */
+    public function shadow()
+    {
+        return $this->hasOne(User::class, 'shadow_of_id');
+    }
 
     public function companies()
     {

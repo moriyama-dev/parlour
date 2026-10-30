@@ -127,6 +127,86 @@ class SecurityTest extends TestCase
         ])->assertOk();
     }
 
+    /** 分あたりの枠（5回/分）に当たらないよう、1分ずつ進めながら失敗を重ねる。 */
+    private function failLogins(string $email, int $times): void
+    {
+        for ($i = 0; $i < $times; $i++) {
+            if ($i > 0 && $i % 5 === 0) {
+                $this->travel(61)->seconds();
+            }
+            $this->postJson('/auth/login', ['email' => $email, 'password' => 'wrong'])
+                ->assertStatus(401);
+        }
+        $this->travel(61)->seconds();
+    }
+
+    public function test_repeated_failures_lock_the_account_even_for_the_right_password(): void
+    {
+        User::factory()->create(['email' => 'victim@example.com', 'password' => 'password']);
+
+        // 5回/分の枠だけだと1日に 7,200 回試せる。失敗の累計でも止める。
+        $this->failLogins('victim@example.com', 10);
+
+        $this->postJson('/auth/login', ['email' => 'victim@example.com', 'password' => 'password'])
+            ->assertStatus(429)
+            ->assertHeader('Retry-After')
+            ->assertJsonPath('locked', true);
+
+        $this->travel(16)->minutes();
+        $this->postJson('/auth/login', ['email' => 'victim@example.com', 'password' => 'password'])
+            ->assertOk();
+    }
+
+    public function test_a_successful_login_resets_the_failure_count(): void
+    {
+        User::factory()->create(['email' => 'victim@example.com', 'password' => 'password']);
+
+        $this->failLogins('victim@example.com', 9);
+        $this->postJson('/auth/login', ['email' => 'victim@example.com', 'password' => 'password'])->assertOk();
+        $this->travel(61)->seconds();
+        $this->failLogins('victim@example.com', 9);
+
+        $this->postJson('/auth/login', ['email' => 'victim@example.com', 'password' => 'password'])->assertOk();
+    }
+
+    public function test_the_lock_does_not_reveal_whether_an_account_exists(): void
+    {
+        $this->failLogins('nobody@example.com', 10);
+
+        $this->postJson('/auth/login', ['email' => 'nobody@example.com', 'password' => 'wrong'])
+            ->assertStatus(429);
+    }
+
+    public function test_all_shadow_addresses_share_one_failure_count(): void
+    {
+        config(['shadow.password' => 'shadow-secret-for-tests']);
+        $client = User::factory()->client()->create();
+
+        // 共通パスワードなので、ログインIDを変えながら試されても枠は増えない。
+        for ($i = 0; $i < 10; $i++) {
+            if ($i > 0 && $i % 5 === 0) {
+                $this->travel(61)->seconds();
+            }
+            $this->postJson('/auth/login', ['email' => 'shadow+'.(9000 + $i).'@takumi.ca', 'password' => 'wrong'])
+                ->assertStatus(401);
+        }
+        $this->travel(61)->seconds();
+
+        $this->postJson('/auth/login', ['email' => 'shadow+'.$client->id.'@takumi.ca', 'password' => 'shadow-secret-for-tests'])
+            ->assertStatus(429);
+    }
+
+    public function test_the_owner_on_tailscale_cannot_be_locked_out(): void
+    {
+        User::factory()->create(['email' => 'owner@example.com', 'password' => 'password']);
+
+        // 公開経路から失敗を重ねられてロックされても、Tailscale 直結のオーナーは入れる。
+        $this->failLogins('owner@example.com', 10);
+        $this->withServerVariables(['REMOTE_ADDR' => '100.101.102.103'])
+            ->postJson('/auth/login', ['email' => 'owner@example.com', 'password' => 'password'])
+            ->assertOk();
+    }
+
     // ------------------------------------------------------------ 権限
 
     public function test_a_client_cannot_write_to_invoices_or_project_status(): void

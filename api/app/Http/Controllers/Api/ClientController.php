@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\ShadowUsers;
 use Illuminate\Http\Request;
 
 class ClientController extends Controller
@@ -39,7 +40,7 @@ class ClientController extends Controller
 
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,'.$user->id,
+            'email' => ['required', 'email', 'unique:users,email,'.$user->id, app(ShadowUsers::class)->reservedEmailRule()],
         ]);
 
         $user->update($data);

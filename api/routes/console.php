@@ -2,6 +2,8 @@
 
 use App\Models\CallSignal;
 use App\Models\Subscription;
+use App\Services\LoginLockout;
+use App\Services\ShadowUsers;
 use App\Services\StripeBilling;
 use App\Services\SubscriptionSync;
 use Database\Seeders\DemoSeeder;
@@ -72,3 +74,28 @@ Artisan::command('push:vapid', function () {
     $this->line('VAPID_PRIVATE_KEY='.$keys['privateKey']);
     $this->line('VAPID_SUBJECT='.config('app.url'));
 })->purpose('Generate a VAPID key pair for Web Push');
+
+/*
+ * Shadow ユーザー（CLAUDE.md §18）の照合。新規登録時は User::created が自動で作るので、
+ * これは既存ユーザー分の作成と、除外・削除された元ユーザーの Shadow の掃除のため。
+ * 何度実行しても同じ結果になる。deploy.sh も migrate の直後に呼ぶ。
+ */
+Artisan::command('shadow:sync', function (ShadowUsers $shadows) {
+    if (! $shadows->enabled()) {
+        $this->warn('SHADOW_PASSWORD is not set — shadow users are disabled.');
+
+        return;
+    }
+
+    ['created' => $created, 'removed' => $removed] = $shadows->sync();
+    $this->line("shadow users: {$created} created, {$removed} removed");
+})->purpose('Create missing shadow users and remove ones that should not exist');
+
+Schedule::command('shadow:sync')->dailyAt('05:15')->name('shadow-sync')->withoutOverlapping();
+
+// ログイン失敗の一時ロック（LoginLockout）を解く。本人が締め出されたとき用。
+// Shadow の枠を解くときは shadow+<ID>@takumi.ca のどれかを渡す（全 Shadow で共有の枠）。
+Artisan::command('auth:unlock {email}', function (LoginLockout $lockout, string $email) {
+    $lockout->clear($lockout->bucketFor($email));
+    $this->line("unlocked: {$email}");
+})->purpose('Clear the failed-login lockout for an email address');

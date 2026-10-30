@@ -487,6 +487,9 @@ export default {
   demo: {
     banner: "Demo environment — sample data resets periodically",
   },
+  shadow: {
+    readOnly: "This is a read-only shadow session, so this action is not available",
+  },
   login: {
     subtitle: "Sign in to your account",
     email: "Email",
@@ -494,6 +497,7 @@ export default {
     signIn: "Sign in",
     signingIn: "Signing in...",
     failed: "Login failed",
+    locked: "Too many failed attempts. This account is temporarily locked — please try again later",
     demo: {
       heading: "For visitors",
       lead: "Explore the portal with a demo account below.",

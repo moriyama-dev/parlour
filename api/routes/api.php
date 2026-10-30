@@ -54,8 +54,12 @@ Route::post('/invitations/{token}/accept', [InvitationController::class, 'accept
  */
 Route::post('/stripe/webhook', StripeWebhookController::class)->middleware('throttle:stripe-webhook');
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/auth/logout', [AuthController::class, 'logout']);
+/*
+ * shadow — Shadow ユーザー（CLAUDE.md §18）を元ユーザーに差し替え、閲覧専用にする。
+ * auth:sanctum の直後に置くこと（以降の role / project.access は元ユーザーで判定される）。
+ */
+Route::middleware(['auth:sanctum', 'shadow'])->group(function () {
+    Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
     Route::get('/auth/me', [AuthController::class, 'me']);
 
     // Companies (developer only)

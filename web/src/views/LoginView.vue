@@ -85,7 +85,9 @@ async function handleLogin() {
     await auth.login(email.value, password.value)
     router.push(auth.isDeveloper ? "/dashboard" : "/client/dashboard")
   } catch (e) {
-    error.value = e.response?.data?.message || t("login.failed")
+    error.value = e.response?.status === 429
+      ? t("login.locked")
+      : e.response?.data?.message || t("login.failed")
   } finally {
     loading.value = false
   }

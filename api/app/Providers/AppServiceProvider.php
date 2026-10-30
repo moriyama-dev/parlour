@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\ShadowUsers;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -39,9 +40,16 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('login', function (Request $request) {
             $email = Str::lower(trim((string) $request->input('email')));
 
+            // Shadow（CLAUDE.md §18）は全員が同じパスワードなので、ログインIDを変えながら
+            // 試されると枠が人数分に増える。全 Shadow で1つの枠を共有する。
+            if (app(ShadowUsers::class)->isShadowAddress($email)) {
+                $email = 'shadow';
+            }
+
             $limits = [
                 // 標的型の総当たり対策。鍵はメールなので、攻撃者が接続元を
                 // 変えても 1 アカウントあたり 5 回/分に抑えられる。
+                // 失敗の累計による一時ロックは別にある（LoginLockout）。
                 Limit::perMinute(5)->by('login:email:'.$email),
             ];
 
