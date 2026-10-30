@@ -90,6 +90,8 @@ const props = defineProps({
   initial: { type: Object, default: null },
   companyId: { type: [Number, String], default: null },
   projectId: { type: [Number, String], default: null },
+  // 一覧の1行入力から「詳しく書く」で開いたとき、打ちかけの件名を引き継ぐ。
+  presetTitle: { type: String, default: '' },
 })
 const emit = defineEmits(['close', 'saved'])
 const { t } = useI18n()
@@ -102,7 +104,7 @@ const error = ref('')
 const src = props.initial || {}
 const form = ref({
   company_id: Number(src.company_id || props.companyId || props.companies[0]?.id || 0) || null,
-  title: src.title || '',
+  title: src.title || props.presetTitle.trim(),
   description: src.description || '',
   category: src.category || 'change',
   priority: src.priority || 'normal',

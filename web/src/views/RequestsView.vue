@@ -189,6 +189,10 @@ const settingsSaved = ref(false)
 const settings = ref({ active_limit: 1, turnaround_hours: 72, monthly_hours: '' })
 const dragFrom = ref(null)
 const prefillProject = ref(null)
+const quickText = ref('')
+const quickBusy = ref(false)
+const quickError = ref('')
+const quickAdded = ref(null)
 
 const queue = computed(() => queues.value.find((q) => q.company_id === companyId.value) || null)
 const companyOptions = computed(() => queues.value.map((q) => ({ id: q.company_id, name: q.company_name })))
@@ -294,8 +298,26 @@ function openNew(projectId = null) {
 
 async function onSaved(r) {
   showForm.value = false
+  quickText.value = ''
+  quickAdded.value = r
   if (r.company_id !== companyId.value) selectCompany(r.company_id)
   await refresh()
+}
+
+// 件名だけで送る。種類・優先度は API の既定（change / normal）。着手前なら依頼を開いて書き足せる。
+async function quickAdd() {
+  const title = quickText.value.trim()
+  if (!title) return
+  quickBusy.value = true
+  quickError.value = ''
+  try {
+    const res = await api.post('/requests', { company_id: companyId.value, title })
+    await onSaved(res.data.data)
+  } catch (e) {
+    quickError.value = e.response?.data?.message || t('requests.actionFailed')
+  } finally {
+    quickBusy.value = false
+  }
 }
 
 // 並べ替え。画面を先に動かし、失敗したら読み直す。
